@@ -22,15 +22,26 @@ CREATE TABLE public.games (
     best_of INTEGER NOT NULL DEFAULT 3,
     order_index INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
+    image_url TEXT,
     player1_wins INTEGER NOT NULL DEFAULT 0,
     player2_wins INTEGER NOT NULL DEFAULT 0,
     winner_index INTEGER CHECK (winner_index IN (1, 2)),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Create the matches table
+CREATE TABLE public.matches (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    game_id UUID REFERENCES public.games(id) ON DELETE CASCADE,
+    match_number INTEGER NOT NULL,
+    winner_index INTEGER NOT NULL CHECK (winner_index IN (1, 2)),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for tournaments
 
@@ -65,6 +76,23 @@ CREATE POLICY "Admins can update games" ON public.games
 CREATE POLICY "Admins can delete games" ON public.games
     FOR DELETE TO authenticated USING (true);
 
--- Enable Supabase Realtime for both tables
+-- Create policies for matches
+
+-- Spectators (anyone) can view matches
+CREATE POLICY "Matches are viewable by everyone" ON public.matches
+    FOR SELECT USING (true);
+
+-- Only authenticated users (Admins) can insert/update matches
+CREATE POLICY "Admins can insert matches" ON public.matches
+    FOR INSERT TO authenticated WITH CHECK (true);
+
+CREATE POLICY "Admins can update matches" ON public.matches
+    FOR UPDATE TO authenticated USING (true);
+
+CREATE POLICY "Admins can delete matches" ON public.matches
+    FOR DELETE TO authenticated USING (true);
+
+-- Enable Supabase Realtime for tables
 ALTER PUBLICATION supabase_realtime ADD TABLE public.tournaments;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.games;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.matches;

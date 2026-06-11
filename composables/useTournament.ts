@@ -13,6 +13,7 @@ export interface Match {
 
 export interface Game {
   id: string
+  tournament_id: string
   name: string
   image_url?: string
   best_of: number
@@ -38,195 +39,242 @@ export interface Tournament {
   player2_score: number
 }
 
-// Global state for mocking
+// Global state
 const tournamentState = ref<Tournament>({
-  id: 'mock-tourney-1',
-  name: 'The Ultimate Showdown 2026',
-  status: 'in_progress',
-  player1_name: 'CyberNinja',
-  player1_avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=CyberNinja',
-  player1_description: 'Master of the digital realm, swift and deadly.',
-  player2_name: 'NeoMatrix',
-  player2_avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=NeoMatrix',
-  player2_description: 'The chosen one, bending reality to their will.',
-  player1_score: 1,
+  id: '',
+  name: 'Loading...',
+  status: 'draft',
+  player1_name: 'Loading...',
+  player1_avatar: '',
+  player1_description: '',
+  player2_name: 'Loading...',
+  player2_avatar: '',
+  player2_description: '',
+  player1_score: 0,
   player2_score: 0
 })
 
-const gamesState = ref<Game[]>([
-  {
-    id: 'game-1',
-    name: 'Tekken 8',
-    image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000&auto=format&fit=crop',
-    best_of: 5,
-    status: 'completed',
-    player1_wins: 3,
-    player2_wins: 1,
-    winner_index: 1,
-    order_index: 1,
-    matches: [
-      { id: 'm1', game_id: 'game-1', match_number: 1, winner_index: 1, created_at: new Date().toISOString() },
-      { id: 'm2', game_id: 'game-1', match_number: 2, winner_index: 2, created_at: new Date().toISOString() },
-      { id: 'm3', game_id: 'game-1', match_number: 3, winner_index: 1, created_at: new Date().toISOString() },
-      { id: 'm4', game_id: 'game-1', match_number: 4, winner_index: 1, created_at: new Date().toISOString() },
-    ]
-  },
-  {
-    id: 'game-2',
-    name: 'Chess (Blitz)',
-    image_url: 'https://images.unsplash.com/photo-1529699211952-734e80c4d42b?q=80&w=1000&auto=format&fit=crop',
-    best_of: 3,
-    status: 'in_progress',
-    player1_wins: 1,
-    player2_wins: 1,
-    winner_index: null,
-    order_index: 2,
-    matches: [
-      { id: 'm5', game_id: 'game-2', match_number: 1, winner_index: 2, created_at: new Date().toISOString() },
-      { id: 'm6', game_id: 'game-2', match_number: 2, winner_index: 1, created_at: new Date().toISOString() },
-    ]
-  },
-  {
-    id: 'game-3',
-    name: 'Rocket League',
-    image_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000&auto=format&fit=crop',
-    best_of: 7,
-    status: 'pending',
-    player1_wins: 0,
-    player2_wins: 0,
-    winner_index: null,
-    order_index: 3,
-    matches: []
-  }
-])
+const gamesState = ref<Game[]>([])
+const isLoaded = ref(false)
 
 export const useTournament = () => {
-  // TODO: Replace these with Supabase useAsyncData and real-time channel subscriptions
-  
-  const recordMatchWin = (gameId: string, winnerIndex: 1 | 2) => {
+  const supabase = useSupabaseClient()
+
+  const loadData = async () => {
+    // Fetch first tournament
+    const { data: tourneys, error: tErr } = await supabase.from('tournaments').select('*').order('created_at', { ascending: true }).limit(1)
+    if (tErr) console.error('Error fetching tournament', tErr)
+    
+    if (tourneys && tourneys.length > 0) {
+      Object.assign(tournamentState.value, tourneys[0])
+      
+      // Fetch games
+      const { data: gData, error: gErr } = await supabase.from('games').select('*').eq('tournament_id', tournamentState.value.id)
+      if (gErr) console.error('Error fetching games', gErr)
+      
+      // Fetch matches
+      const { data: mData, error: mErr } = await supabase.from('matches').select('*, games!inner(tournament_id)').eq('games.tournament_id', tournamentState.value.id)
+      if (mErr) console.error('Error fetching matches', mErr)
+
+      if (gData) {
+        gamesState.value = gData.map(g => {
+          return {
+            ...g,
+            matches: mData ? mData.filter(m => m.game_id === g.id).sort((a,b) => a.match_number - b.match_number) : []
+          }
+        })
+      }
+    }
+    isLoaded.value = true
+  }
+
+  const setupRealtime = () => {
+    supabase.channel('public:tournaments')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, payload => {
+        if (payload.new && payload.new.id === tournamentState.value.id) {
+          Object.assign(tournamentState.value, payload.new)
+        }
+      })
+      .subscribe()
+
+    supabase.channel('public:games')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, payload => {
+        if (!tournamentState.value || payload.new?.tournament_id !== tournamentState.value.id) return
+        
+        if (payload.eventType === 'INSERT') {
+          gamesState.value.push({ ...payload.new, matches: [] } as Game)
+        } else if (payload.eventType === 'UPDATE') {
+          const idx = gamesState.value.findIndex(g => g.id === payload.new.id)
+          if (idx !== -1) {
+             const oldMatches = gamesState.value[idx].matches
+             gamesState.value[idx] = { ...payload.new, matches: oldMatches } as Game
+          }
+        } else if (payload.eventType === 'DELETE') {
+          gamesState.value = gamesState.value.filter(g => g.id !== payload.old.id)
+        }
+      })
+      .subscribe()
+
+    supabase.channel('public:matches')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, payload => {
+        if (payload.eventType === 'INSERT') {
+          const game = gamesState.value.find(g => g.id === payload.new.game_id)
+          if (game) {
+            game.matches.push(payload.new as Match)
+            game.matches.sort((a,b) => a.match_number - b.match_number)
+          }
+        } else if (payload.eventType === 'DELETE') {
+           gamesState.value.forEach(g => {
+             g.matches = g.matches.filter(m => m.id !== payload.old.id)
+           })
+        }
+      })
+      .subscribe()
+  }
+
+  // Load immediately when composable is first used (if not loaded)
+  if (!isLoaded.value) {
+    loadData().then(setupRealtime)
+  }
+
+  const recordMatchWin = async (gameId: string, winnerIndex: 1 | 2) => {
     const game = gamesState.value.find(g => g.id === gameId)
-    if (!game || game.status === 'completed') return
+    if (!game || game.status === 'completed' || !tournamentState.value.id) return
 
-    // Create match record
-    game.matches.push({
-      id: `match-${Date.now()}`,
+    const match_number = game.matches.length + 1
+    const { error: mErr } = await supabase.from('matches').insert({
       game_id: game.id,
-      match_number: game.matches.length + 1,
-      winner_index: winnerIndex,
-      created_at: new Date().toISOString()
+      match_number,
+      winner_index
     })
+    if (mErr) { console.error(mErr); return; }
 
-    // Update game score
-    if (winnerIndex === 1) game.player1_wins++
-    else game.player2_wins++
+    const player1_wins = winnerIndex === 1 ? game.player1_wins + 1 : game.player1_wins
+    const player2_wins = winnerIndex === 2 ? game.player2_wins + 1 : game.player2_wins
+    
+    let newStatus = game.status === 'pending' ? 'in_progress' : game.status
+    let newWinnerIndex = null
 
-    if (game.status === 'pending') game.status = 'in_progress'
-
-    // Check if game is completed
     const winsNeeded = Math.ceil(game.best_of / 2)
-    if (game.player1_wins >= winsNeeded || game.player2_wins >= winsNeeded) {
-      game.status = 'completed'
-      game.winner_index = game.player1_wins > game.player2_wins ? 1 : 2
-      // Update overall tournament score
-      if (game.winner_index === 1) tournamentState.value.player1_score++
-      else tournamentState.value.player2_score++
+    if (player1_wins >= winsNeeded || player2_wins >= winsNeeded) {
+      newStatus = 'completed'
+      newWinnerIndex = player1_wins > player2_wins ? 1 : 2
+    }
+
+    const { error: gErr } = await supabase.from('games').update({
+      player1_wins,
+      player2_wins,
+      status: newStatus,
+      winner_index: newWinnerIndex
+    }).eq('id', game.id)
+
+    if (gErr) console.error(gErr)
+
+    if (newWinnerIndex !== null) {
+      const p1Score = newWinnerIndex === 1 ? tournamentState.value.player1_score + 1 : tournamentState.value.player1_score
+      const p2Score = newWinnerIndex === 2 ? tournamentState.value.player2_score + 1 : tournamentState.value.player2_score
+      await supabase.from('tournaments').update({
+         player1_score: p1Score,
+         player2_score: p2Score
+      }).eq('id', tournamentState.value.id)
     }
   }
 
-  const addGame = (name: string, best_of: number, image_url?: string) => {
+  const addGame = async (name: string, best_of: number, image_url?: string) => {
+    if (!tournamentState.value.id) return
     const newOrderIndex = gamesState.value.length > 0 ? Math.max(...gamesState.value.map(g => g.order_index)) + 1 : 1
-    gamesState.value.push({
-      id: `game-${Date.now()}`,
+    await supabase.from('games').insert({
+      tournament_id: tournamentState.value.id,
       name,
       best_of,
-      image_url: image_url || undefined,
-      status: 'pending',
-      player1_wins: 0,
-      player2_wins: 0,
-      winner_index: null,
-      order_index: newOrderIndex,
-      matches: []
+      image_url: image_url || null,
+      order_index: newOrderIndex
     })
   }
 
-  const deleteGame = (id: string) => {
-    const index = gamesState.value.findIndex(g => g.id === id)
-    if (index !== -1) {
-      gamesState.value.splice(index, 1)
-    }
+  const deleteGame = async (id: string) => {
+    await supabase.from('games').delete().eq('id', id)
   }
 
-  const updateGame = (id: string, name: string, best_of: number, image_url?: string) => {
+  const updateGame = async (id: string, name: string, best_of: number, image_url?: string) => {
     const game = gamesState.value.find(g => g.id === id)
-    if (!game) return
+    if (!game || !tournamentState.value.id) return
 
-    // 1. If it was completed, temporarily revert its contribution to the tournament score
+    let p1ScoreDiff = 0
+    let p2ScoreDiff = 0
     if (game.status === 'completed' && game.winner_index) {
-      if (game.winner_index === 1) {
-        tournamentState.value.player1_score = Math.max(0, tournamentState.value.player1_score - 1)
-      } else if (game.winner_index === 2) {
-        tournamentState.value.player2_score = Math.max(0, tournamentState.value.player2_score - 1)
-      }
+       if (game.winner_index === 1) p1ScoreDiff = -1
+       else if (game.winner_index === 2) p2ScoreDiff = -1
     }
 
-    // 2. Update properties
-    game.name = name
-    game.best_of = best_of
-    game.image_url = image_url || undefined
+    const winsNeeded = Math.ceil(best_of / 2)
+    let newStatus: GameStatus = game.matches.length > 0 ? 'in_progress' : 'pending'
+    let newWinnerIndex = null
 
-    // 3. Re-evaluate wins and status
-    game.player1_wins = game.matches.filter(m => m.winner_index === 1).length
-    game.player2_wins = game.matches.filter(m => m.winner_index === 2).length
-
-    const winsNeeded = Math.ceil(game.best_of / 2)
     if (game.player1_wins >= winsNeeded || game.player2_wins >= winsNeeded) {
-      game.status = 'completed'
-      game.winner_index = game.player1_wins > game.player2_wins ? 1 : 2
-      // Re-apply to tournament score
-      if (game.winner_index === 1) tournamentState.value.player1_score++
-      else tournamentState.value.player2_score++
-    } else {
-      game.status = game.matches.length > 0 ? 'in_progress' : 'pending'
-      game.winner_index = null
+      newStatus = 'completed'
+      newWinnerIndex = game.player1_wins > game.player2_wins ? 1 : 2
+      if (newWinnerIndex === 1) p1ScoreDiff += 1
+      else if (newWinnerIndex === 2) p2ScoreDiff += 1
+    }
+
+    await supabase.from('games').update({
+       name, best_of, image_url: image_url || null, status: newStatus, winner_index: newWinnerIndex
+    }).eq('id', id)
+
+    if (p1ScoreDiff !== 0 || p2ScoreDiff !== 0) {
+       await supabase.from('tournaments').update({
+          player1_score: tournamentState.value.player1_score + p1ScoreDiff,
+          player2_score: tournamentState.value.player2_score + p2ScoreDiff
+       }).eq('id', tournamentState.value.id)
     }
   }
 
-  const resetGameScores = (id: string) => {
+  const resetGameScores = async (id: string) => {
     const game = gamesState.value.find(g => g.id === id)
-    if (!game) return
+    if (!game || !tournamentState.value.id) return
 
-    // Revert tournament score if the game was completed
+    let p1ScoreDiff = 0
+    let p2ScoreDiff = 0
     if (game.status === 'completed' && game.winner_index) {
-      if (game.winner_index === 1) {
-        tournamentState.value.player1_score = Math.max(0, tournamentState.value.player1_score - 1)
-      } else if (game.winner_index === 2) {
-        tournamentState.value.player2_score = Math.max(0, tournamentState.value.player2_score - 1)
-      }
+       if (game.winner_index === 1) p1ScoreDiff = -1
+       else if (game.winner_index === 2) p2ScoreDiff = -1
     }
 
-    // Reset game state
-    game.status = 'pending'
-    game.player1_wins = 0
-    game.player2_wins = 0
-    game.winner_index = null
-    game.matches = []
+    await supabase.from('matches').delete().eq('game_id', id)
+    
+    await supabase.from('games').update({
+       status: 'pending', player1_wins: 0, player2_wins: 0, winner_index: null
+    }).eq('id', id)
+
+    if (p1ScoreDiff !== 0 || p2ScoreDiff !== 0) {
+       await supabase.from('tournaments').update({
+          player1_score: tournamentState.value.player1_score + p1ScoreDiff,
+          player2_score: tournamentState.value.player2_score + p2ScoreDiff
+       }).eq('id', tournamentState.value.id)
+    }
   }
 
-  const updatePlayers = (
+  const updatePlayers = async (
     p1Name: string, p1Avatar: string, p1Desc: string,
     p2Name: string, p2Avatar: string, p2Desc: string
   ) => {
-    tournamentState.value.player1_name = p1Name
-    tournamentState.value.player1_avatar = p1Avatar
-    tournamentState.value.player1_description = p1Desc
-    tournamentState.value.player2_name = p2Name
-    tournamentState.value.player2_avatar = p2Avatar
-    tournamentState.value.player2_description = p2Desc
+    if (!tournamentState.value.id) return
+    await supabase.from('tournaments').update({
+      player1_name: p1Name,
+      player1_avatar: p1Avatar,
+      player1_description: p1Desc,
+      player2_name: p2Name,
+      player2_avatar: p2Avatar,
+      player2_description: p2Desc
+    }).eq('id', tournamentState.value.id)
   }
 
   return {
     tournament: tournamentState,
-    games: computed(() => [...gamesState.value].sort((a, b) => a.order_index - b.order_index)),
+    games: computed(() => {
+       return [...gamesState.value].sort((a, b) => a.order_index - b.order_index)
+    }),
     recordMatchWin,
     addGame,
     deleteGame,
