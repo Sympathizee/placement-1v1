@@ -191,7 +191,7 @@ export function useThreeScene(canvasRef: Ref<HTMLCanvasElement | null>) {
     
     if (targetPlane) {
       // Calculate a position slightly in front of the plane
-      const offset = 12
+      const offset = 10
       // Vector from center to plane
       const angle = targetPlane.userData.angle
       const radius = targetPlane.userData.radius - offset
@@ -202,22 +202,47 @@ export function useThreeScene(canvasRef: Ref<HTMLCanvasElement | null>) {
         z: -Math.cos(angle) * radius + 10
       }
 
-      gsap.to(camera.value.position, {
+      // OVER THE TOP FLAIR
+      const tl = gsap.timeline()
+
+      // 1. Dramatic pullback and slight rotation
+      tl.to(camera.value.position, {
+        x: targetPos.x * 0.5,
+        y: targetPos.y + 15,
+        z: 45,
+        duration: 0.6,
+        ease: 'power2.in'
+      })
+      // 2. High-speed swoop into the target
+      .to(camera.value.position, {
         x: targetPos.x,
         y: targetPos.y,
         z: targetPos.z,
-        duration: 1.8,
-        ease: 'power3.inOut'
+        duration: 1.2,
+        ease: 'power4.out'
       })
 
-      // Make target plane pop out
+      // Make target plane pop out dynamically
       gamePlanes.value.forEach(p => {
         if (p === targetPlane) {
-          gsap.to(p.material, { opacity: 1, duration: 1.2 })
-          gsap.to(p.scale, { x: 1.1, y: 1.1, z: 1.1, duration: 1.2, ease: 'back.out(1.5)' })
+          gsap.to(p.material, { opacity: 1, duration: 1.8 })
+          
+          // Elastic pop
+          gsap.fromTo(p.scale, 
+            { x: 0.8, y: 0.8, z: 0.8 }, 
+            { x: 1.15, y: 1.15, z: 1.15, duration: 1.5, ease: 'elastic.out(1, 0.4)' }
+          )
+          
+          // Slight rotational flair
+          gsap.fromTo(p.rotation,
+            { z: Math.PI * 0.05 },
+            { z: 0, duration: 1.5, ease: 'elastic.out(1, 0.4)' }
+          )
+          
         } else {
-          gsap.to(p.material, { opacity: 0.1, duration: 1 })
-          gsap.to(p.scale, { x: 0.9, y: 0.9, z: 0.9, duration: 1 })
+          // Push others away and fade
+          gsap.to(p.material, { opacity: 0.05, duration: 0.8 })
+          gsap.to(p.scale, { x: 0.7, y: 0.7, z: 0.7, duration: 0.8 })
         }
       })
     }
@@ -230,7 +255,7 @@ export function useThreeScene(canvasRef: Ref<HTMLCanvasElement | null>) {
       x: 0,
       y: 0,
       z: 40,
-      duration: 1.8,
+      duration: 1.5,
       ease: 'power3.inOut'
     })
 

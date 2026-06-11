@@ -17,6 +17,9 @@ const expandP2Desc = ref(false)
 const selectedPlayer = ref<1 | 2 | null>(null)
 const mainUIContainer = ref<HTMLElement | null>(null)
 
+// Scroll Lock state
+let isAnimatingScroll = false
+
 const openPlayer = (player: 1 | 2) => {
   selectedPlayer.value = player
 }
@@ -25,39 +28,75 @@ const closePlayerModal = () => {
   selectedPlayer.value = null
 }
 
-const toggleExpand = (gameId: string) => {
-  if (expandedGameId.value === gameId) {
+const toggleExpand = (gameId: string, forceSwitch = false) => {
+  if (expandedGameId.value === gameId && !forceSwitch) {
     // Go back to overview
     expandedGameId.value = null
     flyToOverview()
     
-    // Animate UI back to normal
+    // Restore normal UI
     gsap.to('.header-ui', { opacity: 1, y: 0, duration: 1, ease: 'power2.out' })
-    gsap.to('.game-item', { opacity: 1, scale: 1, duration: 0.5, stagger: 0.05 })
     const gamesElements = document.querySelectorAll('.game-item')
     gamesElements.forEach((el) => {
       ;(el as HTMLElement).style.pointerEvents = 'auto'
+      gsap.to(el, { opacity: 1, scale: 1, height: 'auto', margin: 'auto', padding: '1.5rem', duration: 0.5, ease: 'power2.out' })
     })
+    document.body.style.overflow = 'auto'
   } else {
     // Focus on specific game
     expandedGameId.value = gameId
     flyToGame(gameId)
     
-    // Fade out irrelevant UI
+    // Fade out header
     gsap.to('.header-ui', { opacity: 0, y: -20, duration: 0.5 })
     
-    // Hide other games
+    // Hide other games smoothly by collapsing height so the focused one slides nicely into view
     const gamesElements = document.querySelectorAll('.game-item')
     gamesElements.forEach((el) => {
       const elGameId = el.getAttribute('data-game-id')
       if (elGameId !== gameId) {
-        gsap.to(el, { opacity: 0, scale: 0.9, duration: 0.5 })
+        gsap.to(el, { opacity: 0, scale: 0.8, height: 0, padding: 0, margin: 0, duration: 0.8, ease: 'power3.inOut' })
         ;(el as HTMLElement).style.pointerEvents = 'none'
       } else {
-        gsap.to(el, { opacity: 1, scale: 1, duration: 0.5 })
+        gsap.to(el, { opacity: 1, scale: 1, height: 'auto', padding: '1.5rem', marginTop: '2rem', duration: 0.8, ease: 'power3.inOut' })
         ;(el as HTMLElement).style.pointerEvents = 'auto'
       }
     })
+
+    // Lock body scroll to hijack wheel events
+    document.body.style.overflow = 'hidden'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+// Intercept scroll when expanded
+const handleWheel = (e: WheelEvent) => {
+  if (expandedGameId.value !== null) {
+    e.preventDefault()
+    
+    if (isAnimatingScroll) return
+
+    // Scroll threshold
+    if (Math.abs(e.deltaY) > 40) {
+      const currentIndex = games.value.findIndex(g => g.id === expandedGameId.value)
+      
+      if (e.deltaY > 0 && currentIndex < games.value.length - 1) {
+        // Scroll Down -> Next
+        isAnimatingScroll = true
+        toggleExpand(games.value[currentIndex + 1].id, true)
+        setTimeout(() => { isAnimatingScroll = false }, 1800) // wait for fly animation
+      } else if (e.deltaY < 0 && currentIndex > 0) {
+        // Scroll Up -> Prev
+        isAnimatingScroll = true
+        toggleExpand(games.value[currentIndex - 1].id, true)
+        setTimeout(() => { isAnimatingScroll = false }, 1800)
+      } else if (e.deltaY < 0 && currentIndex === 0) {
+        // Scroll Up at the top -> Go back to overview
+        isAnimatingScroll = true
+        toggleExpand(games.value[0].id) // this will collapse because it matches current id
+        setTimeout(() => { isAnimatingScroll = false }, 1000)
+      }
+    }
   }
 }
 
@@ -72,6 +111,7 @@ onMounted(() => {
     init()
   }
   window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('wheel', handleWheel, { passive: false })
   
   // Initial GSAP animation
   gsap.from('.header-ui', { opacity: 0, y: 30, duration: 1.5, ease: 'power3.out', delay: 0.5 })
@@ -85,8 +125,38 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
+const onEnterModal = (el: Element, done: () => void) => {
+  const backdrop = el.querySelector('.player-modal-backdrop')
+  const content = el.querySelector('.modal-content')
+  const left = el.querySelector('.modal-left')
+  const image = el.querySelector('.profile-image')
+  const titleBlock = el.querySelector('.profile-title-block')
+  const descBlock = el.querySelector('.desc-block')
+  const statItems = el.querySelectorAll('.stat-item')
+  
+  const tl = gsap.timeline({ onComplete: done })
+  
+  tl.from(backdrop, { opacity: 0, duration: 0.4, ease: 'power2.out' })
+    .from(content, { opacity: 0, y: 40, scale: 0.95, duration: 0.6, ease: 'power3.out' }, '-=0.2')
+    .from(left, { x: -30, opacity: 0, duration: 0.6, ease: 'power3.out' }, '-=0.4')
+    .from(image, { scale: 1.15, filter: 'grayscale(100%)', duration: 1, ease: 'power2.out' }, '-=0.6')
+    .from(titleBlock, { x: -20, opacity: 0, duration: 0.5, ease: 'power2.out' }, '-=0.8')
+    .from(descBlock, { y: 20, opacity: 0, duration: 0.5, ease: 'power2.out' }, '-=0.6')
+    .from(statItems, { y: 20, opacity: 0, stagger: 0.1, duration: 0.5, ease: 'back.out(1.2)' }, '-=0.4')
+}
+
+const onLeaveModal = (el: Element, done: () => void) => {
+  const backdrop = el.querySelector('.player-modal-backdrop')
+  const content = el.querySelector('.modal-content')
+  
+  const tl = gsap.timeline({ onComplete: done })
+  tl.to(content, { opacity: 0, y: 20, scale: 0.95, duration: 0.3, ease: 'power2.in' })
+    .to(backdrop, { opacity: 0, duration: 0.3, ease: 'power2.in' }, '-=0.1')
+}
+
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('wheel', handleWheel)
 })
 </script>
 
@@ -244,47 +314,69 @@ onUnmounted(() => {
     </div>
 
     <!-- Player Profile Modal -->
-    <Transition name="modal-snappy">
-      <div v-if="selectedPlayer !== null" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/90 backdrop-blur-xl cursor-pointer transition-opacity duration-300" @click="closePlayerModal"></div>
+    <Transition @enter="onEnterModal" @leave="onLeaveModal" :css="false">
+      <div v-if="selectedPlayer !== null" class="fixed inset-0 z-[100] flex items-center justify-center p-4 player-modal-wrapper">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer player-modal-backdrop" @click="closePlayerModal"></div>
         
-        <div class="modal-content relative w-full max-w-2xl bg-[#0f0f11]/90 border border-white/10 p-8 shadow-[0_0_100px_rgba(255,255,255,0.05)] flex flex-col md:flex-row gap-8 overflow-hidden z-10 rounded-2xl backdrop-blur-2xl">
+        <div class="modal-content relative w-full max-w-4xl bg-[#0f0f11]/90 border border-white/10 p-0 shadow-[0_0_100px_rgba(255,255,255,0.05)] flex flex-col md:flex-row overflow-hidden z-10 rounded-2xl backdrop-blur-2xl">
           
-          <button @click="closePlayerModal" class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20 bg-white/5 p-2 rounded-full hover:bg-white/10">
+          <button @click="closePlayerModal" class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20 bg-black/50 backdrop-blur-md border border-white/10 p-2 rounded-full hover:bg-white/10 close-btn">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
 
-          <div class="flex-shrink-0 flex flex-col items-center gap-4 relative z-10">
-            <div class="w-48 h-48 clip-diagonal bg-[#151518] p-1 border border-white/20 shadow-[0_0_30px_currentColor]" :style="{ color: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }">
-              <img :src="selectedPlayer === 1 ? tournament.player1_avatar : tournament.player2_avatar" class="w-full h-full object-cover clip-diagonal" />
+          <!-- Left Side: Large Portrait -->
+          <div class="md:w-5/12 relative h-64 md:h-auto modal-left overflow-hidden bg-[#050505]">
+            <!-- Background glow -->
+            <div class="absolute inset-0 opacity-20" :style="{ backgroundColor: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }"></div>
+            
+            <!-- Glitchy / Sharp Image -->
+            <img :src="selectedPlayer === 1 ? tournament.player1_avatar : tournament.player2_avatar" class="w-full h-full object-cover object-top grayscale-[30%] contrast-125 mix-blend-screen profile-image" />
+            
+            <!-- Overlay Text -->
+            <div class="absolute bottom-6 left-6 z-10 profile-title-block">
+              <div class="text-[10px] uppercase font-bold tracking-[0.4em] mb-1 drop-shadow-md" :style="{ color: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }">Unit_0{{ selectedPlayer }}</div>
+              <h3 class="text-4xl md:text-5xl font-black uppercase tracking-widest text-white drop-shadow-lg leading-none">{{ selectedPlayer === 1 ? tournament.player1_name : tournament.player2_name }}</h3>
             </div>
-            <div class="text-center">
-              <div class="text-[10px] uppercase font-bold tracking-[0.3em] mb-1" :style="{ color: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }">Player_0{{ selectedPlayer }}</div>
-              <h3 class="text-3xl font-black uppercase tracking-wider text-white drop-shadow-md">{{ selectedPlayer === 1 ? tournament.player1_name : tournament.player2_name }}</h3>
-            </div>
+            
+            <!-- Overlay gradient to blend into right side -->
+            <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#0f0f11] via-[#0f0f11]/30 to-transparent"></div>
           </div>
 
-          <div class="flex-1 flex flex-col gap-6 relative z-10">
-            <p class="text-sm text-white/80 leading-relaxed italic border-l-2 pl-4" :style="{ borderColor: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') + '80' : (tournament.player2_color || '#3b82f6') + '80' }">
-              {{ selectedPlayer === 1 ? tournament.player1_description : tournament.player2_description || 'No data available for this unit.' }}
-            </p>
-
-            <div class="mt-auto">
-              <h4 class="text-xs uppercase font-bold tracking-[0.2em] text-white/50 mb-4 flex items-center gap-2">
-                <span class="w-2 h-2 bg-white/60 rounded-full"></span> Stage Performance
+          <!-- Right Side: Stats & Info -->
+          <div class="md:w-7/12 p-8 md:p-12 flex flex-col gap-8 relative z-10 modal-right">
+            
+            <div class="desc-block">
+              <h4 class="text-[10px] uppercase font-bold tracking-[0.2em] text-white/40 mb-3 flex items-center gap-2">
+                <span class="w-1 h-4" :style="{ backgroundColor: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }"></span> Background Data
               </h4>
-              <div class="space-y-4">
-                <div v-for="game in games" :key="game.id" class="space-y-1">
-                  <div class="flex justify-between text-[10px] uppercase font-bold tracking-wider">
-                    <span class="text-white/90">{{ game.name }}</span>
-                    <span class="text-white/60">{{ selectedPlayer === 1 ? game.player1_wins : game.player2_wins }} / {{ Math.ceil(game.best_of / 2) }} WINS</span>
-                  </div>
-                  <div class="h-1.5 w-full bg-white/10 relative overflow-hidden rounded-full">
-                    <div class="absolute top-0 left-0 h-full transition-all duration-700 ease-out shadow-[0_0_10px_currentColor]"
-                         :style="{ backgroundColor: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6'), color: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6'), width: `${((selectedPlayer === 1 ? game.player1_wins : game.player2_wins) / Math.ceil(game.best_of / 2)) * 100}%` }">
+              <p class="text-sm text-white/80 leading-relaxed font-light">
+                {{ selectedPlayer === 1 ? tournament.player1_description : tournament.player2_description || 'No data available for this unit. Classification: Unknown.' }}
+              </p>
+            </div>
+
+            <div class="mt-auto stats-block">
+              <h4 class="text-[10px] uppercase font-bold tracking-[0.2em] text-white/40 mb-4 flex items-center gap-2">
+                <span class="w-1 h-4" :style="{ backgroundColor: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }"></span> Combat Metrics
+              </h4>
+              
+              <!-- Grid stats -->
+              <div class="grid grid-cols-2 gap-4">
+                <div v-for="game in games" :key="game.id" class="p-4 border border-white/5 bg-white/[0.02] rounded-xl relative overflow-hidden group hover:border-white/10 transition-colors stat-item">
+                  <div class="absolute inset-0 opacity-10 transition-opacity duration-500 group-hover:opacity-20" :style="{ backgroundColor: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }"></div>
+                  
+                  <div class="relative z-10 flex flex-col justify-between h-full gap-2">
+                    <span class="text-[10px] uppercase font-bold tracking-wider text-white/70 truncate">{{ game.name }}</span>
+                    <div class="flex items-end gap-2">
+                      <span class="text-3xl font-black leading-none text-white drop-shadow-md">{{ selectedPlayer === 1 ? game.player1_wins : game.player2_wins }}</span>
+                      <span class="text-xs text-white/40 font-bold mb-1">/ {{ Math.ceil(game.best_of / 2) }}</span>
                     </div>
+                  </div>
+                  
+                  <!-- Miniature progress bar at bottom -->
+                  <div class="absolute bottom-0 left-0 h-1 bg-white/5 w-full">
+                    <div class="h-full shadow-[0_0_10px_currentColor] transition-all duration-1000 ease-out" :style="{ width: `${((selectedPlayer === 1 ? game.player1_wins : game.player2_wins) / Math.ceil(game.best_of / 2)) * 100}%`, backgroundColor: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6'), color: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }"></div>
                   </div>
                 </div>
               </div>
