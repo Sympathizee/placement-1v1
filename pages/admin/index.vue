@@ -96,6 +96,100 @@
         </div>
       </header>
 
+      <!-- Player Configuration -->
+      <div class="sharp-panel p-6 md:p-8 border-dashed border-white/20">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold uppercase tracking-wider flex items-center gap-3">
+            <span class="w-2 h-2 bg-red-500 animate-pulse"></span> Configure Players
+          </h3>
+          <button @click="handleSavePlayers" class="bg-red-500 text-white font-black uppercase tracking-widest py-2 px-6 hover:bg-red-600 transition-colors snappy clip-diagonal text-xs">
+            SAVE PLAYERS
+          </button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Player 1 Config -->
+          <div class="space-y-4 border border-white/5 bg-[#151518] p-6 clip-slant relative group">
+            <div class="absolute top-0 left-0 w-1 h-full bg-red-500/50 group-hover:bg-red-500 transition-colors"></div>
+            <h4 class="text-sm font-black uppercase tracking-widest text-red-500 mb-4">Player 01</h4>
+            
+            <div class="space-y-2">
+              <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Display Name</label>
+              <input v-model="editP1Name" type="text" class="w-full bg-[#0f0f11] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-red-500 snappy clip-slant text-sm" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Short Description</label>
+              <input v-model="editP1Desc" type="text" placeholder="e.g. Master of the digital realm" class="w-full bg-[#0f0f11] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-red-500 snappy clip-slant text-sm" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Select Icon</label>
+              <div class="flex flex-wrap gap-2">
+                <button v-for="avatar in predefinedAvatars" :key="avatar" @click="editP1Avatar = avatar" 
+                        class="w-10 h-10 border snappy overflow-hidden" 
+                        :class="editP1Avatar === avatar ? 'border-red-500' : 'border-white/10 hover:border-white/30'">
+                  <img :src="avatar" class="w-full h-full object-cover" />
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Or Paste Custom Image URL (e.g. Discord CDN)</label>
+              <input v-model="editP1Avatar" type="text" placeholder="https://..." class="w-full bg-[#0f0f11] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-red-500 snappy clip-slant text-sm" />
+            </div>
+            
+            <!-- Live Preview -->
+            <div class="flex items-center gap-4 mt-4">
+              <div class="w-16 h-16 border border-white/10 bg-[#0f0f11] overflow-hidden flex-shrink-0">
+                <img v-if="editP1Avatar" :src="editP1Avatar" class="w-full h-full object-cover" />
+              </div>
+              <span class="text-[10px] uppercase text-white/30 tracking-widest">Icon Preview</span>
+            </div>
+          </div>
+
+          <!-- Player 2 Config -->
+          <div class="space-y-4 border border-white/5 bg-[#151518] p-6 clip-slant relative group">
+            <div class="absolute top-0 right-0 w-1 h-full bg-blue-500/50 group-hover:bg-blue-500 transition-colors"></div>
+            <h4 class="text-sm font-black uppercase tracking-widest text-blue-500 mb-4">Player 02</h4>
+            
+            <div class="space-y-2">
+              <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Display Name</label>
+              <input v-model="editP2Name" type="text" class="w-full bg-[#0f0f11] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-blue-500 snappy clip-slant text-sm" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Short Description</label>
+              <input v-model="editP2Desc" type="text" placeholder="e.g. The chosen one" class="w-full bg-[#0f0f11] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-blue-500 snappy clip-slant text-sm" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Select Icon</label>
+              <div class="flex flex-wrap gap-2">
+                <button v-for="avatar in predefinedAvatars" :key="avatar" @click="editP2Avatar = avatar" 
+                        class="w-10 h-10 border snappy overflow-hidden" 
+                        :class="editP2Avatar === avatar ? 'border-blue-500' : 'border-white/10 hover:border-white/30'">
+                  <img :src="avatar" class="w-full h-full object-cover" />
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Or Paste Custom Image URL (e.g. Discord CDN)</label>
+              <input v-model="editP2Avatar" type="text" placeholder="https://..." class="w-full bg-[#0f0f11] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-blue-500 snappy clip-slant text-sm" />
+            </div>
+            
+            <!-- Live Preview -->
+            <div class="flex items-center gap-4 mt-4">
+              <div class="w-16 h-16 border border-white/10 bg-[#0f0f11] overflow-hidden flex-shrink-0">
+                <img v-if="editP2Avatar" :src="editP2Avatar" class="w-full h-full object-cover" />
+              </div>
+              <span class="text-[10px] uppercase text-white/30 tracking-widest">Icon Preview</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Initialize New Stage -->
       <div class="sharp-panel p-6 md:p-8 border-dashed border-white/20">
         <h3 class="text-xl font-bold uppercase tracking-wider mb-6 flex items-center gap-3">
@@ -326,7 +420,33 @@
 import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { useTournament } from '~/composables/useTournament'
 
-const { tournament, games, recordMatchWin, addGame, deleteGame, updateGame, resetGameScores } = useTournament()
+const { tournament, games, recordMatchWin, addGame, deleteGame, updateGame, resetGameScores, updatePlayers } = useTournament()
+
+const predefinedAvatars = [
+  'https://api.dicebear.com/7.x/bottts/svg?seed=CyberNinja',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=NeoMatrix',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Ghost',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Phantom',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Viper',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Wraith',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Specter',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Banshee'
+]
+
+const editP1Name = ref(tournament.value.player1_name)
+const editP1Desc = ref(tournament.value.player1_description || '')
+const editP1Avatar = ref(tournament.value.player1_avatar)
+
+const editP2Name = ref(tournament.value.player2_name)
+const editP2Desc = ref(tournament.value.player2_description || '')
+const editP2Avatar = ref(tournament.value.player2_avatar)
+
+const handleSavePlayers = () => {
+  updatePlayers(
+    editP1Name.value, editP1Avatar.value, editP1Desc.value,
+    editP2Name.value, editP2Avatar.value, editP2Desc.value
+  )
+}
 
 const newGameName = ref('')
 const newGameBestOf = ref(3)

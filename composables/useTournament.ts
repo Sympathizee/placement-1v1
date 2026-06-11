@@ -30,8 +30,10 @@ export interface Tournament {
   status: TournamentStatus
   player1_name: string
   player1_avatar: string
+  player1_description?: string
   player2_name: string
   player2_avatar: string
+  player2_description?: string
   player1_score: number
   player2_score: number
 }
@@ -43,8 +45,10 @@ const tournamentState = ref<Tournament>({
   status: 'in_progress',
   player1_name: 'CyberNinja',
   player1_avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=CyberNinja',
+  player1_description: 'Master of the digital realm, swift and deadly.',
   player2_name: 'NeoMatrix',
   player2_avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=NeoMatrix',
+  player2_description: 'The chosen one, bending reality to their will.',
   player1_score: 1,
   player2_score: 0
 })
@@ -208,6 +212,18 @@ export const useTournament = () => {
     game.matches = []
   }
 
+  const updatePlayers = (
+    p1Name: string, p1Avatar: string, p1Desc: string,
+    p2Name: string, p2Avatar: string, p2Desc: string
+  ) => {
+    tournamentState.value.player1_name = p1Name
+    tournamentState.value.player1_avatar = p1Avatar
+    tournamentState.value.player1_description = p1Desc
+    tournamentState.value.player2_name = p2Name
+    tournamentState.value.player2_avatar = p2Avatar
+    tournamentState.value.player2_description = p2Desc
+  }
+
   return {
     tournament: tournamentState,
     games: computed(() => [...gamesState.value].sort((a, b) => a.order_index - b.order_index)),
@@ -215,6 +231,7 @@ export const useTournament = () => {
     addGame,
     deleteGame,
     updateGame,
-    resetGameScores
+    resetGameScores,
+    updatePlayers
   }
 }

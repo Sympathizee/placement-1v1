@@ -25,6 +25,13 @@
           <div class="flex flex-col">
             <span class="text-[10px] text-red-500 uppercase tracking-widest font-bold mb-1">Player_01</span>
             <h2 class="text-3xl font-black tracking-wider uppercase">{{ tournament.player1_name }}</h2>
+            <p v-if="tournament.player1_description" 
+               @click="expandP1Desc = !expandP1Desc"
+               class="text-[10px] text-white/50 uppercase tracking-widest mt-1 max-w-[200px] cursor-pointer hover:text-white/80 transition-colors" 
+               :class="expandP1Desc ? '' : 'truncate'"
+               :title="expandP1Desc ? '' : tournament.player1_description">
+              {{ tournament.player1_description }}
+            </p>
           </div>
         </div>
 
@@ -45,6 +52,13 @@
           <div class="flex flex-col items-end md:items-start">
             <span class="text-[10px] text-blue-500 uppercase tracking-widest font-bold mb-1">Player_02</span>
             <h2 class="text-3xl font-black tracking-wider uppercase">{{ tournament.player2_name }}</h2>
+            <p v-if="tournament.player2_description" 
+               @click="expandP2Desc = !expandP2Desc"
+               class="text-[10px] text-white/50 uppercase tracking-widest mt-1 max-w-[200px] cursor-pointer hover:text-white/80 transition-colors" 
+               :class="expandP2Desc ? '' : 'truncate'"
+               :title="expandP2Desc ? '' : tournament.player2_description">
+              {{ tournament.player2_description }}
+            </p>
           </div>
           <div class="w-24 h-24 clip-diagonal bg-[#151518] p-1 border border-white/20">
             <img :src="tournament.player2_avatar" class="w-full h-full object-cover clip-diagonal grayscale hover:grayscale-0 snappy" />
@@ -181,6 +195,8 @@ const { tournament, games } = useTournament()
 
 // UI State
 const expandedGameId = ref<string | null>(null)
+const expandP1Desc = ref(false)
+const expandP2Desc = ref(false)
 
 const toggleExpand = (gameId: string) => {
   expandedGameId.value = expandedGameId.value === gameId ? null : gameId
