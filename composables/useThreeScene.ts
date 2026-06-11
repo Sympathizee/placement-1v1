@@ -68,31 +68,50 @@ export function useThreeScene(canvasRef: Ref<HTMLCanvasElement | null>) {
       return light
     })
 
-    // Minimalist Floating Dust
-    const particlesGeometry = new THREE.BufferGeometry()
-    const particlesCount = 1000
-    const posArray = new Float32Array(particlesCount * 3)
+    // Classy Sci-Fi Flair: Slow rotating wireframe halos in the far background
+    const rings = new THREE.Group()
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.05, wireframe: true })
+    
+    const ring1 = new THREE.Mesh(new THREE.TorusGeometry(120, 0.2, 16, 100), ringMat)
+    ring1.rotation.x = Math.PI / 2
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(140, 0.2, 16, 100), ringMat)
+    ring2.rotation.y = Math.PI / 3
+    const ring3 = new THREE.Mesh(new THREE.TorusGeometry(160, 0.2, 16, 100), ringMat)
+    ring3.rotation.z = Math.PI / 4
 
-    for (let i = 0; i < particlesCount * 3; i++) {
-      posArray[i] = (Math.random() - 0.5) * 400
-      posArray[i+1] = (Math.random() - 0.5) * 400
-      posArray[i+2] = (Math.random() - 0.5) * 200 - 20
+    rings.add(ring1, ring2, ring3)
+    rings.position.z = -50
+    scene.value.add(rings)
+    backgroundMesh.value.userData.rings = rings
+
+    // High-End Multi-Layer Parallax Dust
+    const dustLayers = new THREE.Group()
+    
+    const createDustLayer = (count: number, size: number, opacity: number, zRange: [number, number]) => {
+      const geo = new THREE.BufferGeometry()
+      const pos = new Float32Array(count * 3)
+      for (let i = 0; i < count * 3; i += 3) {
+        pos[i] = (Math.random() - 0.5) * 400
+        pos[i+1] = (Math.random() - 0.5) * 400
+        pos[i+2] = (Math.random() - 0.5) * (zRange[1] - zRange[0]) + zRange[0]
+      }
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+      const mat = new THREE.PointsMaterial({
+        size, color: 0xffffff, transparent: true, opacity, blending: THREE.AdditiveBlending
+      })
+      return new THREE.Points(geo, mat)
     }
 
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3))
-    
-    const particleMaterial = new THREE.PointsMaterial({
-      size: 0.1,
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.2,
-      blending: THREE.AdditiveBlending
-    })
+    // Layer 1: Dense, faint, distant pixels
+    const dust1 = createDustLayer(5000, 0.05, 0.15, [-150, -50])
+    // Layer 2: Medium density, slightly closer
+    const dust2 = createDustLayer(2000, 0.1, 0.3, [-60, 10])
+    // Layer 3: Sparse, larger glowing pixels, close to camera
+    const dust3 = createDustLayer(500, 0.2, 0.5, [0, 40])
 
-    const dustParticles = new THREE.Points(particlesGeometry, particleMaterial)
-    scene.value.add(dustParticles)
-    // Store in backgroundMesh userData so we can rotate it in animate()
-    backgroundMesh.value.userData.dust = dustParticles
+    dustLayers.add(dust1, dust2, dust3)
+    scene.value.add(dustLayers)
+    backgroundMesh.value.userData.dustLayers = dustLayers
 
     window.addEventListener('resize', onResize)
     window.addEventListener('mousemove', onMouseMove)
@@ -128,10 +147,27 @@ export function useThreeScene(canvasRef: Ref<HTMLCanvasElement | null>) {
       pointLights.value[2].position.set(Math.sin(elapsedTime * 0.15 + Math.PI/2) * 100, Math.sin(elapsedTime * 0.25) * 50, -85)
     }
 
-    if (backgroundMesh.value && backgroundMesh.value.userData.dust) {
-      const dust = backgroundMesh.value.userData.dust;
-      dust.rotation.y = elapsedTime * 0.01;
-      dust.rotation.x = elapsedTime * 0.005;
+    if (backgroundMesh.value) {
+      // Rotate Rings
+      if (backgroundMesh.value.userData.rings) {
+        const rings = backgroundMesh.value.userData.rings
+        rings.rotation.x = elapsedTime * 0.02
+        rings.rotation.y = elapsedTime * 0.015
+        rings.rotation.z = elapsedTime * 0.01
+      }
+      
+      // Rotate Dust Layers (Parallax effect through different speeds)
+      if (backgroundMesh.value.userData.dustLayers) {
+        const dustLayers = backgroundMesh.value.userData.dustLayers
+        // Rotate the whole group slowly
+        dustLayers.rotation.y = elapsedTime * 0.01
+        
+        // Slightly rotate individual layers for complex parallax
+        dustLayers.children[0].rotation.y = elapsedTime * 0.005
+        dustLayers.children[1].rotation.y = elapsedTime * 0.01
+        dustLayers.children[2].rotation.y = elapsedTime * 0.02
+        dustLayers.children[2].rotation.x = Math.sin(elapsedTime * 0.5) * 0.05 // Gentle sway on closest dust
+      }
     }
 
     // Smooth camera mouse look
