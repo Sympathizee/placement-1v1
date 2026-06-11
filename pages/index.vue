@@ -2,7 +2,7 @@
   <div class="min-h-screen font-sans selection:bg-red-500/30 text-white pb-32 relative z-0">
     <!-- Watermark Background -->
     <div class="fixed inset-0 pointer-events-none -z-10 flex items-center justify-center overflow-hidden">
-      <img src="/full_logo.PNG" class="max-w-none w-[200%] md:w-[120%] opacity-5 grayscale mix-blend-overlay object-contain" alt="" />
+      <img :src="'/full_logo.PNG'" class="max-w-none w-[200%] md:w-[120%] opacity-5 grayscale mix-blend-overlay object-contain" alt="" />
     </div>
 
     <!-- Top Bar / Modern anime HUD feel -->
