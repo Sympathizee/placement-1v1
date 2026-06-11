@@ -37,7 +37,7 @@ const toggleExpand = (gameId: string, forceSwitch = false) => {
     gsap.to('.header-ui', { opacity: 1, y: 0, duration: 1, ease: 'power2.out' })
     const gamesElements = document.querySelectorAll('.game-item')
     gsap.to(gamesElements, { opacity: 1, y: 0, scale: 1, duration: 0.8, stagger: 0.05, ease: 'power3.out', onComplete: () => {
-      gamesElements.forEach(el => ;(el as HTMLElement).style.pointerEvents = 'auto')
+      gamesElements.forEach(el => { (el as HTMLElement).style.pointerEvents = 'auto' })
     }})
     document.body.style.overflow = 'auto'
   } else {
@@ -50,7 +50,7 @@ const toggleExpand = (gameId: string, forceSwitch = false) => {
       // Fade out header and list
       gsap.to('.header-ui', { opacity: 0, y: -20, duration: 0.5 })
       const gamesElements = document.querySelectorAll('.game-item')
-      gamesElements.forEach(el => ;(el as HTMLElement).style.pointerEvents = 'none')
+      gamesElements.forEach(el => { (el as HTMLElement).style.pointerEvents = 'none' })
       gsap.to(gamesElements, { opacity: 0, y: 50, scale: 0.95, duration: 0.6, stagger: 0.05, ease: 'power3.in' })
     }
 
