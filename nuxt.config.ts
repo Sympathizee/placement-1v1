@@ -17,8 +17,8 @@ export default defineNuxtConfig({
     key: process.env.SUPABASE_KEY || 'sb_publishable_IdBKLyp9bhbSPhDzqr9g_g_lPsuVCQE',
     redirect: false // We will handle our own auth/redirects for the admin dashboard
   },
-  routeRules: {
-    '/**': { prerender: false }
+  experimental: {
+    asyncContext: true
   },
   nitro: {
     prerender: {
