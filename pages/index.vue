@@ -24,7 +24,7 @@
         
         <!-- P1 -->
         <div class="flex items-center gap-6 z-10 bg-[#0f0f11] pr-8">
-          <div class="w-24 h-24 clip-diagonal bg-[#151518] p-1 border border-white/20">
+          <div class="w-24 h-24 clip-diagonal bg-[#151518] p-1 border border-white/20 cursor-pointer" @click="openPlayer(1)">
             <img :src="tournament.player1_avatar" class="w-full h-full object-cover clip-diagonal grayscale hover:grayscale-0 snappy" />
           </div>
           <div class="flex flex-col">
@@ -65,7 +65,7 @@
               {{ tournament.player2_description }}
             </p>
           </div>
-          <div class="w-24 h-24 clip-diagonal bg-[#151518] p-1 border border-white/20">
+          <div class="w-24 h-24 clip-diagonal bg-[#151518] p-1 border border-white/20 cursor-pointer" @click="openPlayer(2)">
             <img :src="tournament.player2_avatar" class="w-full h-full object-cover clip-diagonal grayscale hover:grayscale-0 snappy" />
           </div>
         </div>
@@ -189,11 +189,71 @@
         </div>
       </main>
     </div>
+
+    <!-- Player Profile Modal -->
+    <Transition name="modal-snappy">
+      <div v-if="selectedPlayer !== null" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer transition-opacity duration-300" @click="closePlayerModal"></div>
+        
+        <!-- Modal Content -->
+        <div class="modal-content relative w-full max-w-2xl sharp-panel p-8 shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row gap-8 overflow-hidden z-10">
+          <!-- Background Blended Icon -->
+          <img src="/site_icon.PNG" class="absolute -right-20 -bottom-20 w-96 h-96 opacity-[0.03] grayscale mix-blend-screen pointer-events-none transform rotate-12" />
+
+          <!-- Close Button -->
+          <button @click="closePlayerModal" class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <!-- Player Info -->
+          <div class="flex-shrink-0 flex flex-col items-center gap-4 relative z-10">
+            <div class="w-48 h-48 clip-diagonal bg-[#151518] p-1 border border-white/20 shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+              <img :src="selectedPlayer === 1 ? tournament.player1_avatar : tournament.player2_avatar" class="w-full h-full object-cover clip-diagonal" />
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] uppercase font-bold tracking-[0.3em] mb-1" :class="selectedPlayer === 1 ? 'text-red-500' : 'text-blue-500'">Player_0{{ selectedPlayer }}</div>
+              <h3 class="text-3xl font-black uppercase tracking-wider">{{ selectedPlayer === 1 ? tournament.player1_name : tournament.player2_name }}</h3>
+            </div>
+          </div>
+
+          <!-- Stats & Description -->
+          <div class="flex-1 flex flex-col gap-6 relative z-10">
+            <p class="text-sm text-white/70 leading-relaxed italic border-l-2 pl-4" :class="selectedPlayer === 1 ? 'border-red-500/50' : 'border-blue-500/50'">
+              {{ selectedPlayer === 1 ? tournament.player1_description : tournament.player2_description || 'No data available for this unit.' }}
+            </p>
+
+            <div class="mt-auto">
+              <h4 class="text-xs uppercase font-bold tracking-[0.2em] text-white/40 mb-4 flex items-center gap-2">
+                <span class="w-2 h-2 bg-white/40"></span> Stage Performance
+              </h4>
+              <div class="space-y-4">
+                <div v-for="game in games" :key="game.id" class="space-y-1">
+                  <div class="flex justify-between text-[10px] uppercase font-bold tracking-wider">
+                    <span class="text-white/80">{{ game.name }}</span>
+                    <span class="text-white/50">{{ selectedPlayer === 1 ? game.player1_wins : game.player2_wins }} / {{ Math.ceil(game.best_of / 2) }} WINS</span>
+                  </div>
+                  <div class="h-1.5 w-full bg-white/5 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 h-full transition-all duration-700 ease-out"
+                         :class="selectedPlayer === 1 ? 'bg-red-500' : 'bg-blue-500'"
+                         :style="{ width: `${((selectedPlayer === 1 ? game.player1_wins : game.player2_wins) / Math.ceil(game.best_of / 2)) * 100}%` }">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useTournament } from '~/composables/useTournament'
 
 const { tournament, games } = useTournament()
@@ -202,6 +262,31 @@ const { tournament, games } = useTournament()
 const expandedGameId = ref<string | null>(null)
 const expandP1Desc = ref(false)
 const expandP2Desc = ref(false)
+
+// Player Profile Modal State
+const selectedPlayer = ref<1 | 2 | null>(null)
+
+const openPlayer = (player: 1 | 2) => {
+  selectedPlayer.value = player
+}
+
+const closePlayerModal = () => {
+  selectedPlayer.value = null
+}
+
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && selectedPlayer.value !== null) {
+    closePlayerModal()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 
 const toggleExpand = (gameId: string) => {
   expandedGameId.value = expandedGameId.value === gameId ? null : gameId

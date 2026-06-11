@@ -43,3 +43,24 @@
   opacity: 0;
   transform: translateX(-20px);
 }
+
+/* Modal Transition */
+.modal-snappy-enter-active,
+.modal-snappy-leave-active {
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal-snappy-enter-active .modal-content,
+.modal-snappy-leave-active .modal-content {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-snappy-enter-from,
+.modal-snappy-leave-to {
+  opacity: 0;
+}
+
+.modal-snappy-enter-from .modal-content,
+.modal-snappy-leave-to .modal-content {
+  opacity: 0;
+  transform: scale(0.95) translateY(10px);
+}
