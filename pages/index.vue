@@ -39,7 +39,19 @@ const toggleExpand = (gameId: string, forceSwitch = false) => {
     const gamesElements = document.querySelectorAll('.game-item')
     gamesElements.forEach((el) => {
       ;(el as HTMLElement).style.pointerEvents = 'auto'
-      gsap.to(el, { opacity: 1, scale: 1, height: 'auto', margin: 'auto', padding: '1.5rem', duration: 0.5, ease: 'power2.out' })
+      gsap.to(el, { 
+        opacity: 1, 
+        scale: 1, 
+        height: 'auto', 
+        marginTop: 0,
+        marginBottom: 0,
+        marginLeft: 0,
+        marginRight: 0,
+        padding: '1.5rem', 
+        duration: 0.5, 
+        ease: 'power2.out',
+        onComplete: () => gsap.set(el, { clearProps: 'margin,marginTop,marginBottom,marginLeft,marginRight,height' })
+      })
     })
     document.body.style.overflow = 'auto'
   } else {
@@ -58,7 +70,7 @@ const toggleExpand = (gameId: string, forceSwitch = false) => {
         gsap.to(el, { opacity: 0, scale: 0.8, height: 0, padding: 0, margin: 0, duration: 0.8, ease: 'power3.inOut' })
         ;(el as HTMLElement).style.pointerEvents = 'none'
       } else {
-        gsap.to(el, { opacity: 1, scale: 1, height: 'auto', padding: '1.5rem', marginTop: '2rem', duration: 0.8, ease: 'power3.inOut' })
+        gsap.to(el, { opacity: 1, scale: 1, height: 'auto', padding: '1.5rem', marginTop: '2rem', marginBottom: '2rem', duration: 0.8, ease: 'power3.inOut' })
         ;(el as HTMLElement).style.pointerEvents = 'auto'
       }
     })
@@ -152,6 +164,36 @@ const onLeaveModal = (el: Element, done: () => void) => {
   const tl = gsap.timeline({ onComplete: done })
   tl.to(content, { opacity: 0, y: 20, scale: 0.95, duration: 0.3, ease: 'power2.in' })
     .to(backdrop, { opacity: 0, duration: 0.3, ease: 'power2.in' }, '-=0.1')
+}
+
+const onEnterStageDetails = (el: Element, done: () => void) => {
+  const progressTrack = el.querySelector('.progress-track')
+  const matchCards = el.querySelectorAll('.match-card')
+  const noData = el.querySelector('.no-data')
+  
+  gsap.set(el, { height: 'auto' })
+  const height = (el as HTMLElement).offsetHeight
+  
+  const tl = gsap.timeline({ onComplete: () => {
+    gsap.set(el, { clearProps: 'height' })
+    done()
+  } })
+  
+  tl.fromTo(el, { height: 0, opacity: 0 }, { height: height, opacity: 1, duration: 0.5, ease: 'power3.out' })
+  
+  if (progressTrack) {
+    tl.from(progressTrack, { scaleX: 0, opacity: 0, duration: 0.6, ease: 'power3.out' }, '-=0.3')
+  }
+  if (matchCards.length) {
+    tl.from(matchCards, { y: 20, opacity: 0, scale: 0.9, stagger: 0.1, duration: 0.4, ease: 'back.out(1.5)' }, '-=0.4')
+  }
+  if (noData) {
+    tl.from(noData, { opacity: 0, scale: 0.9, duration: 0.4 }, '-=0.2')
+  }
+}
+
+const onLeaveStageDetails = (el: Element, done: () => void) => {
+  gsap.to(el, { height: 0, opacity: 0, duration: 0.3, ease: 'power2.in', onComplete: done })
 }
 
 onUnmounted(() => {
@@ -265,44 +307,55 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Expanded Details -->
-                <transition
-                  enter-active-class="transition-all duration-500 ease-out"
-                  enter-from-class="opacity-0 max-h-0"
-                  enter-to-class="opacity-100 max-h-[500px]"
-                  leave-active-class="transition-all duration-300 ease-in"
-                  leave-from-class="opacity-100 max-h-[500px]"
-                  leave-to-class="opacity-0 max-h-0"
-                >
-                  <div v-show="expandedGameId === game.id" class="px-6 pb-6 pt-2 border-t border-white/10 space-y-8 bg-transparent">
-                    <div class="flex items-center gap-4">
-                      <div class="w-12 text-[10px] font-bold text-white/50 tracking-widest uppercase">P1</div>
-                      <div class="flex-1 h-2 bg-white/10 flex relative rounded-full overflow-hidden shadow-inner">
-                        <div class="absolute left-0 top-0 h-full transition-all duration-700 ease-out shadow-[0_0_10px_currentColor]" 
-                             :style="{ width: `${(game.player1_wins / Math.ceil(game.best_of / 2)) * 50}%`, backgroundColor: tournament.player1_color || '#ef4444', color: tournament.player1_color || '#ef4444' }"></div>
-                        <div class="absolute right-0 top-0 h-full transition-all duration-700 ease-out shadow-[0_0_10px_currentColor]" 
-                             :style="{ width: `${(game.player2_wins / Math.ceil(game.best_of / 2)) * 50}%`, backgroundColor: tournament.player2_color || '#3b82f6', color: tournament.player2_color || '#3b82f6' }"></div>
-                        <div class="absolute left-1/2 top-0 w-[2px] h-full bg-white z-10 shadow-[0_0_5px_white]"></div>
-                      </div>
-                      <div class="w-12 text-right text-[10px] font-bold text-white/50 tracking-widest uppercase">P2</div>
-                    </div>
+                <!-- Expanded Details -->
+                <transition @enter="onEnterStageDetails" @leave="onLeaveStageDetails" :css="false">
+                  <div v-show="expandedGameId === game.id" class="overflow-hidden">
+                    <div class="px-6 pb-8 pt-6 border-t border-white/10 space-y-8 bg-black/40 backdrop-blur-xl rounded-b-xl stage-details relative mt-2">
+                      <!-- Ambient Glow -->
+                      <div class="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none rounded-b-xl"></div>
+                      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-px bg-white shadow-[0_0_15px_white]"></div>
 
-                    <div v-if="game.matches.length > 0">
-                      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div 
-                          v-for="match in game.matches" 
-                          :key="match.id"
-                          class="p-3 border border-white/10 flex justify-between items-center bg-black/60 backdrop-blur-md rounded-lg shadow-lg hover:border-white/30 transition-colors"
-                        >
-                          <span class="text-[10px] uppercase font-bold text-white/60">R{{ match.match_number }}</span>
-                          <span class="text-[10px] font-black tracking-wider uppercase px-2 py-0.5 rounded-sm shadow-[0_0_10px_currentColor] border border-current" 
-                                :style="{ backgroundColor: (match.winner_index === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6')) + '22', color: match.winner_index === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }">
-                            P{{ match.winner_index }} Win
-                          </span>
+                      <div class="flex items-center gap-6 progress-track relative z-10 origin-left">
+                        <div class="w-12 text-[10px] font-bold text-white/50 tracking-widest uppercase">P1</div>
+                        <div class="flex-1 h-3 bg-black/50 border border-white/10 flex relative rounded-full overflow-hidden shadow-inner">
+                          <div class="absolute left-0 top-0 h-full transition-all duration-1000 ease-out shadow-[0_0_15px_currentColor]" 
+                               :style="{ width: `${(game.player1_wins / Math.ceil(game.best_of / 2)) * 50}%`, backgroundColor: tournament.player1_color || '#ef4444', color: tournament.player1_color || '#ef4444' }"></div>
+                          <div class="absolute right-0 top-0 h-full transition-all duration-1000 ease-out shadow-[0_0_15px_currentColor]" 
+                               :style="{ width: `${(game.player2_wins / Math.ceil(game.best_of / 2)) * 50}%`, backgroundColor: tournament.player2_color || '#3b82f6', color: tournament.player2_color || '#3b82f6' }"></div>
+                          <!-- Glowing middle divider -->
+                          <div class="absolute left-1/2 top-0 w-[2px] h-full bg-white z-10 shadow-[0_0_10px_white]"></div>
+                        </div>
+                        <div class="w-12 text-right text-[10px] font-bold text-white/50 tracking-widest uppercase">P2</div>
+                      </div>
+
+                      <div v-if="game.matches.length > 0" class="relative z-10">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div 
+                            v-for="match in game.matches" 
+                            :key="match.id"
+                            class="match-card p-4 border border-white/10 flex flex-col justify-center items-center gap-2 bg-[#0a0a0c]/80 backdrop-blur-md rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:border-white/30 hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden cursor-default"
+                          >
+                            <div class="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300" :style="{ backgroundColor: match.winner_index === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }"></div>
+                            
+                            <span class="text-[10px] uppercase font-bold text-white/40 tracking-[0.2em]">Match {{ match.match_number }}</span>
+                            
+                            <div class="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent my-1 relative"></div>
+
+                            <span class="text-sm font-black tracking-widest uppercase text-white drop-shadow-[0_0_5px_currentColor]" 
+                                  :style="{ color: match.winner_index === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }">
+                              Unit_0{{ match.winner_index }} Win
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div v-else class="text-center py-6 border border-white/10 border-dashed bg-black/40 backdrop-blur-md rounded-lg">
-                      <p class="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">No Data Found</p>
+                      <div v-else class="no-data text-center py-10 border border-white/5 border-dashed bg-black/20 backdrop-blur-md rounded-xl relative z-10">
+                        <div class="w-12 h-12 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-3 text-white/20">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <p class="text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">Awaiting Combat Data</p>
+                      </div>
                     </div>
                   </div>
                 </transition>
