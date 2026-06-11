@@ -149,7 +149,7 @@ export const useTournament = () => {
     const { error: mErr } = await supabase.from('matches').insert({
       game_id: game.id,
       match_number,
-      winner_index
+      winner_index: winnerIndex
     })
     if (mErr) { console.error(mErr); return; }
 
