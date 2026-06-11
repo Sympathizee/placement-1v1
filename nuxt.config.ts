@@ -13,7 +13,15 @@ export default defineNuxtConfig({
     }
   },
   supabase: {
+    url: process.env.SUPABASE_URL || 'https://jhfxsbirrrvdwuybjijb.supabase.co',
+    key: process.env.SUPABASE_KEY || 'sb_publishable_IdBKLyp9bhbSPhDzqr9g_g_lPsuVCQE',
     redirect: false // We will handle our own auth/redirects for the admin dashboard
+  },
+  nitro: {
+    prerender: {
+      crawlLinks: false,
+      failOnError: false
+    }
   },
   devtools: { enabled: false }
 })
