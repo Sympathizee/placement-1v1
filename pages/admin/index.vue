@@ -417,7 +417,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useTournament } from '~/composables/useTournament'
 
 const { tournament, games, recordMatchWin, addGame, deleteGame, updateGame, resetGameScores, updatePlayers } = useTournament()
@@ -440,6 +440,17 @@ const editP1Avatar = ref(tournament.value.player1_avatar)
 const editP2Name = ref(tournament.value.player2_name)
 const editP2Desc = ref(tournament.value.player2_description || '')
 const editP2Avatar = ref(tournament.value.player2_avatar)
+
+watch(() => tournament.value.id, (newId) => {
+  if (newId) {
+    editP1Name.value = tournament.value.player1_name
+    editP1Desc.value = tournament.value.player1_description || ''
+    editP1Avatar.value = tournament.value.player1_avatar
+    editP2Name.value = tournament.value.player2_name
+    editP2Desc.value = tournament.value.player2_description || ''
+    editP2Avatar.value = tournament.value.player2_avatar
+  }
+}, { immediate: true })
 
 const handleSavePlayers = () => {
   updatePlayers(
