@@ -1,5 +1,10 @@
 <template>
-  <div class="min-h-screen font-sans selection:bg-red-500/30 text-white pb-32">
+  <div class="min-h-screen font-sans selection:bg-red-500/30 text-white pb-32 relative z-0">
+    <!-- Watermark Background -->
+    <div class="fixed inset-0 pointer-events-none -z-10 flex items-center justify-center overflow-hidden">
+      <img src="/full_logo.PNG" class="max-w-none w-[200%] md:w-[120%] opacity-5 grayscale mix-blend-overlay object-contain" alt="" />
+    </div>
+
     <!-- Top Bar / Modern anime HUD feel -->
     <div class="w-full border-b border-white/10 bg-[#0f0f11]/80 backdrop-blur-md sticky top-0 z-50 flex justify-between items-center px-8 py-4">
       <div class="flex items-center gap-4">

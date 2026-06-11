@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
+        { rel: 'icon', type: 'image/png', href: '/site_icon.PNG' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap' }
       ]
     }
