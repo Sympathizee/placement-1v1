@@ -199,7 +199,7 @@
         <!-- Modal Content -->
         <div class="modal-content relative w-full max-w-2xl sharp-panel p-8 shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row gap-8 overflow-hidden z-10">
           <!-- Background Blended Icon -->
-          <img src="/site_icon.PNG" class="absolute -right-20 -bottom-20 w-96 h-96 opacity-[0.03] grayscale mix-blend-screen pointer-events-none transform rotate-12" />
+          <img :src="'/site_icon.PNG'" class="absolute -right-20 -bottom-20 w-96 h-96 opacity-[0.03] grayscale mix-blend-screen pointer-events-none transform rotate-12" />
 
           <!-- Close Button -->
           <button @click="closePlayerModal" class="absolute top-4 right-4 text-white/50 hover:text-white transition-colors z-20">
