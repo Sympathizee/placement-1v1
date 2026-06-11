@@ -1,7 +1,7 @@
 export default defineNuxtConfig({
   modules: [
-    '@nuxtjs/tailwindcss'
-    // '@nuxtjs/supabase'
+    '@nuxtjs/tailwindcss',
+    '@nuxtjs/supabase'
   ],
   css: ['~/assets/css/main.css'],
   app: {
@@ -11,8 +11,8 @@ export default defineNuxtConfig({
       ]
     }
   },
-  /* supabase: {
-    redirect: false
-  }, */
+  supabase: {
+    redirect: false // We will handle our own auth/redirects for the admin dashboard
+  },
   devtools: { enabled: false }
 })
