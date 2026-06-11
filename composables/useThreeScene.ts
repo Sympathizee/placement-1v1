@@ -33,7 +33,7 @@ export function useThreeScene(canvasRef: Ref<HTMLCanvasElement | null>) {
     })
     renderer.value.setSize(window.innerWidth, window.innerHeight)
     renderer.value.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.value.setClearColor(0x0f0f11, 1)
+    renderer.value.setClearColor(0x0f0f11, 0) // Set alpha to 0 for transparency
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
