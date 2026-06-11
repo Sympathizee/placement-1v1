@@ -109,9 +109,9 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <!-- Player 1 Config -->
-          <div class="space-y-4 border border-white/5 bg-[#151518] p-6 clip-slant relative group">
-            <div class="absolute top-0 left-0 w-1 h-full bg-red-500/50 group-hover:bg-red-500 transition-colors"></div>
-            <h4 class="text-sm font-black uppercase tracking-widest text-red-500 mb-4">Player 01</h4>
+          <div class="space-y-4 border border-white/5 bg-[#151518] p-6 clip-slant relative group" :style="`--p1-color: ${editP1Color}`">
+            <div class="absolute top-0 left-0 w-1 h-full opacity-50 group-hover:opacity-100 transition-opacity" :style="{ backgroundColor: editP1Color }"></div>
+            <h4 class="text-sm font-black uppercase tracking-widest mb-4" :style="{ color: editP1Color }">Player 01</h4>
             
             <div class="space-y-2">
               <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Display Name</label>
@@ -136,7 +136,20 @@
 
             <div class="space-y-2">
               <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Or Paste Custom Image URL (e.g. Discord CDN)</label>
-              <input v-model="editP1Avatar" type="text" placeholder="https://..." class="w-full bg-[#0f0f11] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-red-500 snappy clip-slant text-sm" />
+              <input v-model="editP1Avatar" type="text" placeholder="https://..." class="w-full bg-[#0f0f11] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-white/30 snappy clip-slant text-sm" />
+            </div>
+
+            <div class="space-y-2 mt-4 pt-4 border-t border-white/10">
+              <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold mb-2">Theme Color</label>
+              <div class="flex items-center gap-3">
+                <input v-model="editP1Color" type="color" class="w-10 h-10 bg-transparent border-0 p-0 cursor-pointer clip-diagonal" />
+                <div class="flex gap-2">
+                  <button v-for="color in predefinedColors" :key="color" @click="editP1Color = color"
+                          class="w-6 h-6 border snappy clip-diagonal"
+                          :class="editP1Color === color ? 'border-white scale-110' : 'border-white/20 hover:border-white/50'"
+                          :style="{ backgroundColor: color }"></button>
+                </div>
+              </div>
             </div>
             
             <!-- Live Preview -->
@@ -149,9 +162,9 @@
           </div>
 
           <!-- Player 2 Config -->
-          <div class="space-y-4 border border-white/5 bg-[#151518] p-6 clip-slant relative group">
-            <div class="absolute top-0 right-0 w-1 h-full bg-blue-500/50 group-hover:bg-blue-500 transition-colors"></div>
-            <h4 class="text-sm font-black uppercase tracking-widest text-blue-500 mb-4">Player 02</h4>
+          <div class="space-y-4 border border-white/5 bg-[#151518] p-6 clip-slant relative group" :style="`--p2-color: ${editP2Color}`">
+            <div class="absolute top-0 right-0 w-1 h-full opacity-50 group-hover:opacity-100 transition-opacity" :style="{ backgroundColor: editP2Color }"></div>
+            <h4 class="text-sm font-black uppercase tracking-widest mb-4" :style="{ color: editP2Color }">Player 02</h4>
             
             <div class="space-y-2">
               <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Display Name</label>
@@ -176,7 +189,20 @@
 
             <div class="space-y-2">
               <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold">Or Paste Custom Image URL (e.g. Discord CDN)</label>
-              <input v-model="editP2Avatar" type="text" placeholder="https://..." class="w-full bg-[#0f0f11] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-blue-500 snappy clip-slant text-sm" />
+              <input v-model="editP2Avatar" type="text" placeholder="https://..." class="w-full bg-[#0f0f11] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-white/30 snappy clip-slant text-sm" />
+            </div>
+
+            <div class="space-y-2 mt-4 pt-4 border-t border-white/10">
+              <label class="block text-[10px] text-white/50 uppercase tracking-widest font-bold mb-2">Theme Color</label>
+              <div class="flex items-center gap-3">
+                <input v-model="editP2Color" type="color" class="w-10 h-10 bg-transparent border-0 p-0 cursor-pointer clip-diagonal" />
+                <div class="flex gap-2">
+                  <button v-for="color in predefinedColors" :key="color" @click="editP2Color = color"
+                          class="w-6 h-6 border snappy clip-diagonal"
+                          :class="editP2Color === color ? 'border-white scale-110' : 'border-white/20 hover:border-white/50'"
+                          :style="{ backgroundColor: color }"></button>
+                </div>
+              </div>
             </div>
             
             <!-- Live Preview -->
@@ -349,12 +375,12 @@
                 <div class="flex items-center gap-4">
                   <div class="bg-[#0f0f11]/85 px-6 py-2 border border-white/5 clip-slant flex items-center gap-6 backdrop-blur-sm">
                     <div class="text-center">
-                      <span class="block text-[8px] text-red-500 uppercase tracking-widest mb-1">P1</span>
+                      <span class="block text-[8px] uppercase tracking-widest mb-1" :style="{ color: tournament.player1_color || '#ef4444' }">P1</span>
                       <span class="text-3xl font-black">{{ game.player1_wins }}</span>
                     </div>
                     <span class="text-white/20 text-xl font-light">X</span>
                     <div class="text-center">
-                      <span class="block text-[8px] text-blue-500 uppercase tracking-widest mb-1">P2</span>
+                      <span class="block text-[8px] uppercase tracking-widest mb-1" :style="{ color: tournament.player2_color || '#3b82f6' }">P2</span>
                       <span class="text-3xl font-black">{{ game.player2_wins }}</span>
                     </div>
                   </div>
@@ -391,7 +417,7 @@
               
               <div v-else class="bg-[#0f0f11]/60 border border-white/5 p-4 flex items-center justify-center gap-4 clip-diagonal backdrop-blur-sm">
                 <span class="text-[10px] text-white/40 uppercase tracking-widest font-bold">Status: Terminated // Victor:</span>
-                <span class="font-black tracking-widest uppercase" :class="game.winner_index === 1 ? 'text-red-500' : 'text-blue-500'">
+                <span class="font-black tracking-widest uppercase" :style="{ color: game.winner_index === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }">
                   Player 0{{ game.winner_index }}
                 </span>
               </div>
@@ -436,26 +462,32 @@ const predefinedAvatars = [
 const editP1Name = ref(tournament.value.player1_name)
 const editP1Desc = ref(tournament.value.player1_description || '')
 const editP1Avatar = ref(tournament.value.player1_avatar)
+const editP1Color = ref(tournament.value.player1_color || '#ef4444')
 
 const editP2Name = ref(tournament.value.player2_name)
 const editP2Desc = ref(tournament.value.player2_description || '')
 const editP2Avatar = ref(tournament.value.player2_avatar)
+const editP2Color = ref(tournament.value.player2_color || '#3b82f6')
+
+const predefinedColors = ['#ef4444', '#3b82f6', '#10b981', '#a855f7', '#f59e0b', '#06b6d4', '#ec4899', '#ffffff']
 
 watch(() => tournament.value.id, (newId) => {
   if (newId) {
     editP1Name.value = tournament.value.player1_name
     editP1Desc.value = tournament.value.player1_description || ''
     editP1Avatar.value = tournament.value.player1_avatar
+    editP1Color.value = tournament.value.player1_color || '#ef4444'
     editP2Name.value = tournament.value.player2_name
     editP2Desc.value = tournament.value.player2_description || ''
     editP2Avatar.value = tournament.value.player2_avatar
+    editP2Color.value = tournament.value.player2_color || '#3b82f6'
   }
 }, { immediate: true })
 
 const handleSavePlayers = () => {
   updatePlayers(
-    editP1Name.value, editP1Avatar.value, editP1Desc.value,
-    editP2Name.value, editP2Avatar.value, editP2Desc.value
+    editP1Name.value, editP1Avatar.value, editP1Desc.value, editP1Color.value,
+    editP2Name.value, editP2Avatar.value, editP2Desc.value, editP2Color.value
   )
 }
 

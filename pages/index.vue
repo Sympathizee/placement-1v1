@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen font-sans selection:bg-red-500/30 text-white pb-32 relative z-0">
     <!-- Watermark Background -->
-    <div class="fixed inset-0 pointer-events-none -z-10 flex items-center justify-center overflow-hidden">
-      <img :src="'/full_logo.PNG'" class="max-w-none w-[200%] md:w-[120%] opacity-5 grayscale mix-blend-overlay object-contain" alt="" />
+    <div class="fixed inset-0 pointer-events-none -z-10 flex items-center justify-center overflow-hidden" style="mask-image: radial-gradient(circle at center, black 0%, transparent 60%); -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 60%);">
+      <img :src="'/full_logo.PNG'" class="max-w-none w-[200%] md:w-[120%] opacity-10 grayscale mix-blend-overlay object-contain" alt="" />
     </div>
 
     <!-- Top Bar / Modern anime HUD feel -->
@@ -28,7 +28,7 @@
             <img :src="tournament.player1_avatar" class="w-full h-full object-cover clip-diagonal grayscale hover:grayscale-0 snappy" />
           </div>
           <div class="flex flex-col">
-            <span class="text-[10px] text-red-500 uppercase tracking-widest font-bold mb-1">Player_01</span>
+            <span class="text-[10px] uppercase tracking-widest font-bold mb-1" :style="{ color: tournament.player1_color || '#ef4444' }">Player_01</span>
             <h2 class="text-3xl font-black tracking-wider uppercase">{{ tournament.player1_name }}</h2>
             <p v-if="tournament.player1_description" 
                @click="expandP1Desc = !expandP1Desc"
@@ -55,7 +55,7 @@
         <!-- P2 -->
         <div class="flex items-center gap-6 z-10 bg-[#0f0f11] pl-8 flex-row-reverse md:flex-row text-right md:text-left">
           <div class="flex flex-col items-end md:items-start">
-            <span class="text-[10px] text-blue-500 uppercase tracking-widest font-bold mb-1">Player_02</span>
+            <span class="text-[10px] uppercase tracking-widest font-bold mb-1" :style="{ color: tournament.player2_color || '#3b82f6' }">Player_02</span>
             <h2 class="text-3xl font-black tracking-wider uppercase">{{ tournament.player2_name }}</h2>
             <p v-if="tournament.player2_description" 
                @click="expandP2Desc = !expandP2Desc"
@@ -87,7 +87,8 @@
               v-for="game in games" 
               :key="game.id"
               class="sharp-panel cursor-pointer group relative overflow-hidden"
-              :class="{ 'border-red-500 bg-[#1a1a1f]': expandedGameId === game.id }"
+              :class="{ 'bg-[#1a1a1f]': expandedGameId === game.id }"
+              :style="expandedGameId === game.id ? `border-color: ${tournament.player1_color || '#ef4444'}` : ''"
               @click="toggleExpand(game.id)"
             >
               <!-- Background Image / CSS -->
@@ -113,7 +114,8 @@
                   <div class="text-white/20 font-black text-2xl w-12 tracking-tighter">0{{ game.order_index }}</div>
                   <div class="w-px h-10 bg-white/10 hidden md:block"></div>
                   <div>
-                    <h4 class="text-xl font-bold uppercase tracking-wider group-hover:text-red-500 snappy">{{ game.name }}</h4>
+                    <h4 class="text-xl font-bold uppercase tracking-wider group-hover:text-white snappy transition-colors"
+                        :style="expandedGameId === game.id ? { color: tournament.player1_color || '#ef4444' } : {}">{{ game.name }}</h4>
                     <p class="text-[10px] text-white/40 uppercase tracking-[0.2em] mt-1 font-bold">BO{{ game.best_of }} Format</p>
                   </div>
                 </div>
@@ -152,10 +154,10 @@
                   <div class="flex items-center gap-4">
                     <div class="w-12 text-[10px] font-bold text-white/50 tracking-widest uppercase">P1</div>
                     <div class="flex-1 h-2 bg-white/5 flex relative">
-                      <div class="absolute left-0 top-0 h-full bg-red-500 transition-all duration-500 ease-out" 
-                           :style="{ width: `${(game.player1_wins / Math.ceil(game.best_of / 2)) * 50}%` }"></div>
-                      <div class="absolute right-0 top-0 h-full bg-blue-500 transition-all duration-500 ease-out" 
-                           :style="{ width: `${(game.player2_wins / Math.ceil(game.best_of / 2)) * 50}%` }"></div>
+                      <div class="absolute left-0 top-0 h-full transition-all duration-500 ease-out" 
+                           :style="{ width: `${(game.player1_wins / Math.ceil(game.best_of / 2)) * 50}%`, backgroundColor: tournament.player1_color || '#ef4444' }"></div>
+                      <div class="absolute right-0 top-0 h-full transition-all duration-500 ease-out" 
+                           :style="{ width: `${(game.player2_wins / Math.ceil(game.best_of / 2)) * 50}%`, backgroundColor: tournament.player2_color || '#3b82f6' }"></div>
                       <!-- Center Divider -->
                       <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-4 bg-white z-10"></div>
                     </div>
@@ -172,7 +174,7 @@
                       >
                         <span class="text-[10px] uppercase font-bold text-white/40">R{{ match.match_number }}</span>
                         <span class="text-[10px] font-black tracking-wider uppercase px-2 py-0.5" 
-                              :class="match.winner_index === 1 ? 'bg-red-500/20 text-red-500' : 'bg-blue-500/20 text-blue-500'">
+                              :style="{ backgroundColor: (match.winner_index === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6')) + '33', color: match.winner_index === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }">
                           P{{ match.winner_index }} Win
                         </span>
                       </div>
@@ -214,14 +216,14 @@
               <img :src="selectedPlayer === 1 ? tournament.player1_avatar : tournament.player2_avatar" class="w-full h-full object-cover clip-diagonal" />
             </div>
             <div class="text-center">
-              <div class="text-[10px] uppercase font-bold tracking-[0.3em] mb-1" :class="selectedPlayer === 1 ? 'text-red-500' : 'text-blue-500'">Player_0{{ selectedPlayer }}</div>
+              <div class="text-[10px] uppercase font-bold tracking-[0.3em] mb-1" :style="{ color: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }">Player_0{{ selectedPlayer }}</div>
               <h3 class="text-3xl font-black uppercase tracking-wider">{{ selectedPlayer === 1 ? tournament.player1_name : tournament.player2_name }}</h3>
             </div>
           </div>
 
           <!-- Stats & Description -->
           <div class="flex-1 flex flex-col gap-6 relative z-10">
-            <p class="text-sm text-white/70 leading-relaxed italic border-l-2 pl-4" :class="selectedPlayer === 1 ? 'border-red-500/50' : 'border-blue-500/50'">
+            <p class="text-sm text-white/70 leading-relaxed italic border-l-2 pl-4" :style="{ borderColor: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') + '80' : (tournament.player2_color || '#3b82f6') + '80' }">
               {{ selectedPlayer === 1 ? tournament.player1_description : tournament.player2_description || 'No data available for this unit.' }}
             </p>
 
@@ -237,8 +239,7 @@
                   </div>
                   <div class="h-1.5 w-full bg-white/5 relative overflow-hidden">
                     <div class="absolute top-0 left-0 h-full transition-all duration-700 ease-out"
-                         :class="selectedPlayer === 1 ? 'bg-red-500' : 'bg-blue-500'"
-                         :style="{ width: `${((selectedPlayer === 1 ? game.player1_wins : game.player2_wins) / Math.ceil(game.best_of / 2)) * 100}%` }">
+                         :style="{ backgroundColor: selectedPlayer === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6'), width: `${((selectedPlayer === 1 ? game.player1_wins : game.player2_wins) / Math.ceil(game.best_of / 2)) * 100}%` }">
                     </div>
                   </div>
                 </div>

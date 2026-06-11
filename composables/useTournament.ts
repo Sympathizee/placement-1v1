@@ -32,9 +32,11 @@ export interface Tournament {
   player1_name: string
   player1_avatar: string
   player1_description?: string
+  player1_color?: string
   player2_name: string
   player2_avatar: string
   player2_description?: string
+  player2_color?: string
   player1_score: number
   player2_score: number
 }
@@ -47,9 +49,11 @@ const tournamentState = ref<Tournament>({
   player1_name: 'Loading...',
   player1_avatar: '',
   player1_description: '',
+  player1_color: '#ef4444',
   player2_name: 'Loading...',
   player2_avatar: '',
   player2_description: '',
+  player2_color: '#3b82f6',
   player1_score: 0,
   player2_score: 0
 })
@@ -256,17 +260,19 @@ export const useTournament = () => {
   }
 
   const updatePlayers = async (
-    p1Name: string, p1Avatar: string, p1Desc: string,
-    p2Name: string, p2Avatar: string, p2Desc: string
+    p1Name: string, p1Avatar: string, p1Desc: string, p1Color: string,
+    p2Name: string, p2Avatar: string, p2Desc: string, p2Color: string
   ) => {
     if (!tournamentState.value.id) return
     await supabase.from('tournaments').update({
       player1_name: p1Name,
       player1_avatar: p1Avatar,
       player1_description: p1Desc,
+      player1_color: p1Color,
       player2_name: p2Name,
       player2_avatar: p2Avatar,
-      player2_description: p2Desc
+      player2_description: p2Desc,
+      player2_color: p2Color
     }).eq('id', tournamentState.value.id)
   }
 
