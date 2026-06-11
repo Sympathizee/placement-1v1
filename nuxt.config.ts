@@ -21,6 +21,9 @@ export default defineNuxtConfig({
   experimental: {
     asyncContext: true
   },
+  build: {
+    transpile: ['three', 'gsap']
+  },
   nitro: {
     prerender: {
       crawlLinks: false,
