@@ -153,15 +153,15 @@ const onEnterStageOverlay = (el: Element, done: () => void) => {
   
   const tl = gsap.timeline({ onComplete: done })
   
-  tl.from(content, { opacity: 0, y: 50, scale: 0.95, duration: 0.6, ease: 'power3.out' })
+  tl.fromTo(content, { opacity: 0, y: 50, scale: 0.95 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power3.out' })
   if (progressTrack) {
-    tl.from(progressTrack, { scaleX: 0, opacity: 0, duration: 0.6, ease: 'power3.out' }, '-=0.3')
+    tl.fromTo(progressTrack, { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.6, ease: 'power3.out' }, '-=0.3')
   }
   if (matchCards.length) {
-    tl.from(matchCards, { y: 20, opacity: 0, scale: 0.9, stagger: 0.1, duration: 0.4, ease: 'back.out(1.5)' }, '-=0.4')
+    tl.fromTo(matchCards, { y: 20, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, stagger: 0.1, duration: 0.4, ease: 'back.out(1.5)' }, '-=0.4')
   }
   if (noData) {
-    tl.from(noData, { opacity: 0, scale: 0.9, duration: 0.4 }, '-=0.2')
+    tl.fromTo(noData, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.4 }, '-=0.2')
   }
 }
 
@@ -320,14 +320,14 @@ onUnmounted(() => {
                    <div 
                      v-for="match in expandedGameObj.matches" 
                      :key="match.id"
-                     class="match-card p-4 border border-white/10 flex flex-col justify-center items-center gap-2 bg-[#0a0a0c]/80 backdrop-blur-md rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:border-white/30 hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden cursor-default"
+                     class="match-card p-4 border border-white/10 flex flex-col justify-center items-center gap-2 bg-[#0a0a0c]/80 backdrop-blur-md rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:border-white/30 hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden cursor-default text-center"
                    >
                      <div class="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300" :style="{ backgroundColor: match.winner_index === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }"></div>
-                     <span class="text-[10px] uppercase font-bold text-white/40 tracking-[0.2em]">Match {{ match.match_number }}</span>
+                     <span class="text-[10px] uppercase font-bold text-white/40 tracking-[0.2em] text-center w-full">Match {{ match.match_number }}</span>
                      <div class="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent my-1 relative"></div>
-                     <span class="text-sm font-black tracking-widest uppercase text-white drop-shadow-[0_0_5px_currentColor]" 
+                     <span class="text-sm font-black tracking-widest uppercase text-white drop-shadow-[0_0_5px_currentColor] text-center w-full" 
                            :style="{ color: match.winner_index === 1 ? (tournament.player1_color || '#ef4444') : (tournament.player2_color || '#3b82f6') }">
-                       Unit_0{{ match.winner_index }} Win
+                       {{ match.winner_index === 1 ? tournament.player1_name : tournament.player2_name }} WON
                      </span>
                    </div>
                  </div>
