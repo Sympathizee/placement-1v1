@@ -50,6 +50,7 @@ function SynthwaveGrid() {
         vec2 gridUv = uv * vec2(30.0, 50.0);
         vec2 grid = abs(fract(gridUv) - 0.5);
         vec2 lineW = fwidth(gridUv) * 1.5;
+        lineW = clamp(lineW, vec2(0.005), vec2(0.4));
         vec2 lines = smoothstep(lineW, vec2(0.0), grid);
         float line = max(lines.x, lines.y);
 
@@ -125,8 +126,8 @@ function NeonSun() {
         vec3 purple = vec3(0.55, 0.0, 1.0);
         vec3 color  = mix(purple, mix(pink, orange, pow(circle, 0.8)), circle);
 
-        // Horizontal bands for that retro-sun look
-        float bands = step(0.0, sin(vUv.y * 60.0 - uTime * 0.3));
+        // Horizontal bands for that retro-sun look (smoothed to prevent pixel shimmering)
+        float bands = smoothstep(-0.2, 0.2, sin(vUv.y * 60.0 - uTime * 0.3));
         float bandFade = smoothstep(0.5, 0.2, vUv.y);
         circle *= mix(1.0, bands * 0.6 + 0.4, bandFade * 0.8);
 
@@ -221,8 +222,8 @@ function Scene3D() {
     <Canvas
       camera={{ position: [0, -1.5, 6], fov: 70, near: 0.1, far: 100 }}
       dpr={[1, 1.5]}
-      gl={{ antialias: true, alpha: true }}
-      style={{ background: 'transparent' }}
+      gl={{ antialias: true, alpha: false }}
+      style={{ background: '#05000f' }}
     >
       <color attach="background" args={['#05000f']} />
 
@@ -255,7 +256,7 @@ function Scene3D() {
       <SceneCamera />
 
       {/* Post-processing bloom for neon glow */}
-      <EffectComposer>
+      <EffectComposer disableNormalPass>
         <Bloom
           intensity={1.2}
           luminanceThreshold={0.15}
