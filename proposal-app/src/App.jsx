@@ -821,9 +821,13 @@ export default function App() {
         <Scene3D />
       </div>
 
-      {/* Scrollable content */}
-      <div className="scroll-container" ref={scrollContainerRef}>
+      {/* Hero sits outside the opaque container so 3D canvas shows through */}
+      <div className="hero-wrapper">
         <HeroSection />
+      </div>
+
+      {/* Scrollable content — opaque background prevents compositing flicker */}
+      <div className="scroll-container" ref={scrollContainerRef}>
         <div className="section-divider" />
         <CaseSection />
         <div className="section-divider" />
