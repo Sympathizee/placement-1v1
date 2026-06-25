@@ -186,7 +186,10 @@ onUnmounted(() => {
         <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
         <span class="tracking-[0.3em] text-xs uppercase font-bold text-white/70">Sys_Tourney_Link</span>
       </div>
-      <div class="tracking-widest text-[10px] uppercase text-white/50">{{ new Date().toISOString().split('T')[0] }} // ACTIVE</div>
+      <div class="flex items-center gap-4">
+        <a href="/proposal/" target="_blank" class="tracking-widest text-[10px] uppercase text-[#ff00ff] hover:text-[#ff88ff] font-bold border border-[#ff00ff]/30 px-3 py-1 rounded bg-black/50 transition-colors">GTA 6 Proposal</a>
+        <div class="tracking-widest text-[10px] uppercase text-white/50">{{ new Date().toISOString().split('T')[0] }} // ACTIVE</div>
+      </div>
     </div>
 
     <div ref="mainUIContainer" class="max-w-6xl mx-auto p-6 sm:p-12 space-y-16">
