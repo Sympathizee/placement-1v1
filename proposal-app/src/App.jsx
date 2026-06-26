@@ -196,7 +196,7 @@ function VanillaScene3D() {
     createPalmTree([5, -2.5, -25], 0.7, 2)
 
     // 4. SPARKLES
-    const sparklesCount = 80
+    const sparklesCount = 20
     const sparklesGeo = new THREE.BufferGeometry()
     const sparklesPositions = new Float32Array(sparklesCount * 3)
     const sparklesData = []
@@ -298,17 +298,7 @@ function VanillaScene3D() {
     )
     composer.addPass(bloomPass)
 
-    // 7. MOUSE PARALLAX SETUP
-    let mouseX = 0
-    let mouseY = 0
-    let targetMouseX = 0
-    let targetMouseY = 0
 
-    const onMouseMove = (event) => {
-      targetMouseX = (event.clientX / window.innerWidth) * 2 - 1
-      targetMouseY = -(event.clientY / window.innerHeight) * 2 + 1
-    }
-    window.addEventListener('mousemove', onMouseMove)
 
     // 8. RESIZE EVENT SETUP
     const onResize = () => {
@@ -356,19 +346,12 @@ function VanillaScene3D() {
       starsMesh.rotation.y = elapsedTime * 0.01
       starsMesh.rotation.x = elapsedTime * 0.005
 
-      // Smooth mouse parallax
-      mouseX += (targetMouseX - mouseX) * 0.05
-      mouseY += (targetMouseY - mouseY) * 0.05
-
       // Camera scroll reaction
       const targetCamY = -1.5 + globalScrollProgress * 4
       camera.position.y += (targetCamY - camera.position.y) * 0.03
-      
-      // Mouse offset
-      camera.position.x = mouseX * 0.8
-      camera.position.y += mouseY * 0.4
+      camera.position.x = 0
 
-      camera.lookAt(0, camera.position.y - 1 - mouseY * 0.2, -20)
+      camera.lookAt(0, camera.position.y - 1, -20)
 
       composer.render()
     }
@@ -377,7 +360,6 @@ function VanillaScene3D() {
 
     // 10. CLEANUP
     return () => {
-      window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('resize', onResize)
       cancelAnimationFrame(animationId)
 
