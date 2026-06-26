@@ -840,30 +840,54 @@ function CelebrationOverlay({ active }) {
 // ABORT MODAL
 // ============================================
 function AbortModal({ active, onClose, onApprove }) {
+  const [tooBad, setTooBad] = useState(false)
+
+  useEffect(() => {
+    if (!active) {
+      setTooBad(false)
+    }
+  }, [active])
+
   if (!active) return null
 
   return (
     <div className={`abort-modal ${active ? 'active' : ''}`}>
       <div className="abort-modal-backdrop" onClick={onClose} />
       <div className="abort-modal-content">
-        <h3>WAIT, REALLY?</h3>
-        <p>
-          The streets of Leonida need us... 🥺
-          <br /><br />
-          Lucia wouldn&#39;t abort. Jason wouldn&#39;t abort. Are you sure you
-          want to be the reason David can&#39;t experience the cultural event of the
-          decade?
-          <br /><br />
-          <em>Think about it. The right button is right there.</em>
-        </p>
-        <div className="abort-modal-buttons">
-          <button className="btn-approve" onClick={onApprove}>
-            APPROVE INSTEAD
-          </button>
-          <button className="btn-abort" onClick={onClose}>
-            I NEED TIME
-          </button>
-        </div>
+        {tooBad ? (
+          <>
+            <h3>MISSION BYPASSED</h3>
+            <p style={{ textAlign: 'center', fontSize: '1.2rem', margin: '20px 0', lineHeight: '1.6' }}>
+              Well too bad, David already bought it anyway :D 🎮
+            </p>
+            <div className="abort-modal-buttons" style={{ justifyContent: 'center' }}>
+              <button className="btn-approve" onClick={onApprove}>
+                LETS GOOO!
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h3>WAIT, REALLY?</h3>
+            <p>
+              The streets of Leonida need us... 🥺
+              <br /><br />
+              Lucia wouldn&#39;t abort. Jason wouldn&#39;t abort. Are you sure you
+              want to be the reason David can&#39;t experience the cultural event of the
+              decade?
+              <br /><br />
+              <em>Think about it. The right button is right there.</em>
+            </p>
+            <div className="abort-modal-buttons">
+              <button className="btn-approve" onClick={onApprove}>
+                APPROVE INSTEAD
+              </button>
+              <button className="btn-abort" onClick={() => setTooBad(true)}>
+                I NEED TIME
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
