@@ -457,14 +457,16 @@ function LoadingScreen({ onComplete }) {
 // HERO SECTION
 // ============================================
 function HeroSection() {
+  const boxRef = useRef()
   const overlineRef = useRef()
   const titleRef = useRef()
   const subtitleRef = useRef()
   const scrollRef = useRef()
 
   useEffect(() => {
-    const tl = gsap.timeline({ delay: 4.5 })
-    tl.to(overlineRef.current, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' })
+    const tl = gsap.timeline({ delay: 4.2 })
+    tl.to(boxRef.current, { opacity: 1, scale: 1, duration: 1, ease: 'power3.out' })
+      .to(overlineRef.current, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.6')
       .to(titleRef.current, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, '-=0.4')
       .to(subtitleRef.current, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.5')
       .to(scrollRef.current, { opacity: 0.5, duration: 1 }, '-=0.3')
@@ -472,27 +474,33 @@ function HeroSection() {
 
   return (
     <section className="hero-section">
-      <div
-        ref={overlineRef}
-        className="hero-overline"
-        style={{ transform: 'translateY(20px)' }}
+      <div 
+        ref={boxRef} 
+        className="hero-content-box"
+        style={{ opacity: 0, transform: 'scale(0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
       >
-        ■ ROCKSTAR GAMES PRESENTS
+        <div
+          ref={overlineRef}
+          className="hero-overline"
+          style={{ transform: 'translateY(20px)' }}
+        >
+          ■ ROCKSTAR GAMES PRESENTS
+        </div>
+        <h1
+          ref={titleRef}
+          className="hero-title"
+          style={{ transform: 'translateY(30px)' }}
+        >
+          OPERATION:<br /><span className="pink">LEONIDA</span>
+        </h1>
+        <p
+          ref={subtitleRef}
+          className="hero-subtitle"
+          style={{ transform: 'translateY(20px)', marginBottom: 0 }}
+        >
+          A Proposal From D to J
+        </p>
       </div>
-      <h1
-        ref={titleRef}
-        className="hero-title"
-        style={{ transform: 'translateY(30px)' }}
-      >
-        OPERATION:<br /><span className="pink">LEONIDA</span>
-      </h1>
-      <p
-        ref={subtitleRef}
-        className="hero-subtitle"
-        style={{ transform: 'translateY(20px)' }}
-      >
-        A Proposal From D to J
-      </p>
       <div ref={scrollRef} className="hero-scroll-hint">
         SCROLL TO BEGIN BRIEFING
         <div className="chevron" />

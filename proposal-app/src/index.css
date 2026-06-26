@@ -34,10 +34,8 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* scroll-behavior: smooth was removed — it fights with GSAP ScrollTrigger
-     and the manual scroll listener in App.jsx, both of which already drive
-     scroll-based animation. Three systems reacting to scroll at once was
-     part of what caused jank/flicker, particularly in Firefox and Safari. */
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -179,28 +177,23 @@ body {
   z-index: 1;
 }
 
-/* --- Scroll Container (opaque — prevents compositing flicker) --- */
+/* --- Scroll Container (semi-transparent glassmorphism — reveals 3D background) --- */
 .scroll-container {
   position: relative;
   z-index: 1;
-  background: var(--bg);
-  /* No will-change/translateZ here — this layer spans the full page height.
-     Promoting a layer that tall to its own GPU compositing layer forces a
-     full repaint of it on every scroll tick, which was a main flicker cause. */
+  background: rgba(5, 0, 15, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* Smooth gradient fade from 3D scene into opaque content.
-   Fixed to the viewport (not the scrolling container) so its position never
-   has to be recalculated relative to the fixed canvas underneath — the old
-   "top: -120px" version scrolled with the page and tore against the canvas. */
 .scroll-container::before {
   content: '';
-  position: fixed;
-  top: 0;
+  position: absolute;
+  top: -120px;
   left: 0;
   width: 100%;
   height: 120px;
-  background: linear-gradient(to bottom, transparent, var(--bg));
+  background: linear-gradient(to bottom, transparent, rgba(5, 0, 15, 0.5));
   pointer-events: none;
   z-index: 2;
 }
@@ -213,6 +206,8 @@ body {
   justify-content: center;
   padding: 100px 24px;
   position: relative;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .section-inner {
@@ -286,6 +281,22 @@ body {
   text-align: center;
   position: relative;
   padding: 40px 24px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.hero-content-box {
+  background: rgba(5, 0, 15, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 45, 149, 0.2);
+  padding: 40px 60px;
+  border-radius: 8px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 45, 149, 0.05);
+  max-width: 90%;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 2;
 }
 
 .hero-overline {
