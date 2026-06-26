@@ -30,7 +30,7 @@ export function useThreeScene(canvasRef: Ref<HTMLCanvasElement | null>) {
     // Renderer
     renderer.value = new THREE.WebGLRenderer({
       canvas: canvasRef.value,
-      alpha: true,
+      alpha: false,
       antialias: true,
       powerPreference: 'high-performance'
     })

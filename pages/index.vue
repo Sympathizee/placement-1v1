@@ -178,7 +178,7 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-screen font-sans selection:bg-red-500/30 text-white pb-32 relative z-0">
-    <canvas ref="bgCanvas" class="fixed inset-0 pointer-events-none -z-10"></canvas>
+    <canvas ref="bgCanvas" class="fixed inset-0 pointer-events-none -z-10" style="transform: translateZ(0); will-change: transform;"></canvas>
 
     <!-- Top Bar -->
     <div class="header-ui w-full border-b border-white/5 bg-[#0f0f11]/40 backdrop-blur-md sticky top-0 z-50 flex justify-between items-center px-8 py-4">
