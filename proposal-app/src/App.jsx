@@ -498,7 +498,7 @@ function HeroSection() {
           className="hero-subtitle"
           style={{ transform: 'translateY(20px)', marginBottom: 0 }}
         >
-          A Proposal From D to J
+          A Proposal From David to Jovanca
         </p>
       </div>
       <div ref={scrollRef} className="hero-scroll-hint">
@@ -589,7 +589,7 @@ function CoupleSection() {
           {/* Reality side */}
           <div className="couple-card reveal">
             <div className="couple-card-label real">■ IN REAL LIFE</div>
-            <h3>D &amp; J</h3>
+            <h3>David &amp; Jovanca</h3>
             <p>
               Two people navigating something way more complex than a fictional
               heist — actual life, together. Different missions, same team.
@@ -677,9 +677,9 @@ function AskSection() {
 // ============================================
 function DealSection() {
   const commitments = [
-    'D shall actively initiate and engage in cooperative gaming operations featuring "Biped," ensuring maximum teamwork and mutual entertainment.',
+    'David shall actively initiate and engage in cooperative gaming operations featuring "Biped," ensuring maximum teamwork and mutual entertainment.',
     'A steadfast commitment to navigating the high-stress culinary crises of "Overcooked! 2" shall be maintained, with a focus on achieving three-star ratings while preserving domestic peace.',
-    'A live digital broadcast shall be initiated during all solo gaming sessions, thereby granting J unrestricted spectatorship privileges to monitor, critique, and enjoy the gameplay in real-time.',
+    'A live digital broadcast shall be initiated during all solo gaming sessions, thereby granting Jovanca unrestricted spectatorship privileges to monitor, critique, and enjoy the gameplay in real-time.',
     'The procurement and consumption of sugar-sweetened beverages and liquid confectionery are hereby subject to a permanent and absolute ban, effective immediately, in pursuit of optimal health.',
     'A disciplined, rigorous, and highly consistent physical fitness regimen shall be established and strictly adhered to, elevating exercise from a casual suggestion to a mandatory lifestyle decree.'
   ]
@@ -716,8 +716,8 @@ function DealSection() {
           ))}
 
           <div className="contract-signature">
-            <div className="contract-sig-line">OPERATOR D — SIGNATURE</div>
-            <div className="contract-sig-line">OPERATOR J — AUTHORIZATION</div>
+            <div className="contract-sig-line">OPERATOR DAVID — SIGNATURE</div>
+            <div className="contract-sig-line">OPERATOR JOVANCA — AUTHORIZATION</div>
           </div>
         </div>
       </div>
@@ -851,7 +851,7 @@ function AbortModal({ active, onClose, onApprove }) {
           The streets of Leonida need us... 🥺
           <br /><br />
           Lucia wouldn&#39;t abort. Jason wouldn&#39;t abort. Are you sure you
-          want to be the reason D can&#39;t experience the cultural event of the
+          want to be the reason David can&#39;t experience the cultural event of the
           decade?
           <br /><br />
           <em>Think about it. The right button is right there.</em>
