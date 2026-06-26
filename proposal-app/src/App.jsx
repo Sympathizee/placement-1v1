@@ -4,9 +4,9 @@
 // ============================================
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Sparkles, Stars } from '@react-three/drei'
-import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -21,23 +21,101 @@ let globalScrollY = 0
 let globalScrollProgress = 0
 
 // ============================================
-// THREE.JS — SYNTHWAVE GRID
+// THREE.JS — VANILLA SCENE (SCROLL-REACTIVE)
 // ============================================
-function SynthwaveGrid() {
-  const meshRef = useRef()
+function VanillaScene3D() {
+  const canvasRef = useRef(null)
 
-  const shaderData = useMemo(() => ({
-    uniforms: {
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const width = window.innerWidth
+    const height = window.innerHeight
+
+    // Scene
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('#05000f')
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(70, width / height, 0.1, 100)
+    camera.position.set(0, -1.5, 6)
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      antialias: true,
+      alpha: false,
+      powerPreference: 'high-performance'
+    })
+    renderer.setSize(width, height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+
+    // Ambient mood lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.15)
+    scene.add(ambientLight)
+
+    // 1. NEON SUN
+    const sunUniforms = {
       uTime: { value: 0 },
-    },
-    vertexShader: /* glsl */`
+    }
+    const sunVertexShader = `
       varying vec2 vUv;
       void main() {
         vUv = uv;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
-    `,
-    fragmentShader: /* glsl */`
+    `
+    const sunFragmentShader = `
+      varying vec2 vUv;
+      uniform float uTime;
+
+      void main() {
+        vec2 center = vUv - 0.5;
+        float dist = length(center);
+
+        // Circular gradient
+        float circle = smoothstep(0.5, 0.0, dist);
+
+        // Color: warm orange center → hot pink edge
+        vec3 orange = vec3(1.0, 0.42, 0.0);
+        vec3 pink   = vec3(1.0, 0.0, 0.5);
+        vec3 purple = vec3(0.55, 0.0, 1.0);
+        vec3 color  = mix(purple, mix(pink, orange, pow(circle, 0.8)), circle);
+
+        // Horizontal bands for that retro-sun look (smoothed to prevent pixel shimmering)
+        float bands = smoothstep(-0.2, 0.2, sin(vUv.y * 60.0 - uTime * 0.3));
+        float bandFade = smoothstep(0.5, 0.2, vUv.y);
+        circle *= mix(1.0, bands * 0.6 + 0.4, bandFade * 0.8);
+
+        float alpha = circle * 0.65;
+        gl_FragColor = vec4(color, alpha);
+      }
+    `
+    const sunMaterial = new THREE.ShaderMaterial({
+      vertexShader: sunVertexShader,
+      fragmentShader: sunFragmentShader,
+      uniforms: sunUniforms,
+      transparent: true,
+      depthWrite: false,
+    })
+    const sunGeometry = new THREE.CircleGeometry(12, 64)
+    const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial)
+    sunMesh.position.set(0, 2.5, -35)
+    scene.add(sunMesh)
+
+    // 2. SYNTHWAVE GRID
+    const gridUniforms = {
+      uTime: { value: 0 },
+    }
+    const gridVertexShader = `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `
+    const gridFragmentShader = `
       varying vec2 vUv;
       uniform float uTime;
 
@@ -66,205 +144,266 @@ function SynthwaveGrid() {
         float alpha = line * fade * 0.45;
         gl_FragColor = vec4(color, alpha);
       }
-    `,
-  }), [])
+    `
+    const gridMaterial = new THREE.ShaderMaterial({
+      vertexShader: gridVertexShader,
+      fragmentShader: gridFragmentShader,
+      uniforms: gridUniforms,
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    })
+    const gridGeometry = new THREE.PlaneGeometry(80, 50, 1, 1)
+    const gridMesh = new THREE.Mesh(gridGeometry, gridMaterial)
+    gridMesh.rotation.set(-Math.PI / 2.3, 0, 0)
+    gridMesh.position.set(0, -2.5, -8)
+    scene.add(gridMesh)
 
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.material.uniforms.uTime.value = state.clock.elapsedTime
-    }
-  })
+    // 3. PALM TREES
+    const palmTrees = []
+    const createPalmTree = (position, scaleVal, swayOffset) => {
+      const palmGroup = new THREE.Group()
+      palmGroup.position.set(...position)
+      palmGroup.scale.set(scaleVal, scaleVal, scaleVal)
 
-  return (
-    <mesh
-      ref={meshRef}
-      rotation={[-Math.PI / 2.3, 0, 0]}
-      position={[0, -2.5, -8]}
-    >
-      <planeGeometry args={[80, 50, 1, 1]} />
-      <shaderMaterial
-        args={[shaderData]}
-        transparent
-        side={THREE.DoubleSide}
-        depthWrite={false}
-      />
-    </mesh>
-  )
-}
+      // Trunk
+      const trunkGeo = new THREE.CylinderGeometry(0.06, 0.12, 3.5, 5)
+      const blackMaterial = new THREE.MeshBasicMaterial({ color: '#030008' })
+      const trunkMesh = new THREE.Mesh(trunkGeo, blackMaterial)
+      trunkMesh.position.y = 1.5
+      palmGroup.add(trunkMesh)
 
-// ============================================
-// THREE.JS — NEON SUN
-// ============================================
-function NeonSun() {
-  const meshRef = useRef()
-
-  const sunShader = useMemo(() => ({
-    uniforms: {
-      uTime: { value: 0 },
-    },
-    vertexShader: /* glsl */`
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      // Fronds
+      const count = 7
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2
+        const frondGeo = new THREE.PlaneGeometry(0.25, 2.2)
+        const frondMesh = new THREE.Mesh(frondGeo, new THREE.MeshBasicMaterial({ color: '#030008', side: THREE.DoubleSide }))
+        frondMesh.position.set(Math.sin(angle) * 0.6, 3.5, Math.cos(angle) * 0.3)
+        frondMesh.rotation.set(Math.cos(angle) * 0.9, 0, Math.sin(angle) * 0.7 - 0.3)
+        palmGroup.add(frondMesh)
       }
-    `,
-    fragmentShader: /* glsl */`
-      varying vec2 vUv;
-      uniform float uTime;
 
-      void main() {
-        vec2 center = vUv - 0.5;
-        float dist = length(center);
-
-        // Circular gradient
-        float circle = smoothstep(0.5, 0.0, dist);
-
-        // Color: warm orange center → hot pink edge
-        vec3 orange = vec3(1.0, 0.42, 0.0);
-        vec3 pink   = vec3(1.0, 0.0, 0.5);
-        vec3 purple = vec3(0.55, 0.0, 1.0);
-        vec3 color  = mix(purple, mix(pink, orange, pow(circle, 0.8)), circle);
-
-        // Horizontal bands for that retro-sun look (smoothed to prevent pixel shimmering)
-        float bands = smoothstep(-0.2, 0.2, sin(vUv.y * 60.0 - uTime * 0.3));
-        float bandFade = smoothstep(0.5, 0.2, vUv.y);
-        circle *= mix(1.0, bands * 0.6 + 0.4, bandFade * 0.8);
-
-        float alpha = circle * 0.65;
-        gl_FragColor = vec4(color, alpha);
-      }
-    `,
-  }), [])
-
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.material.uniforms.uTime.value = state.clock.elapsedTime
+      scene.add(palmGroup)
+      palmTrees.push({ group: palmGroup, swayOffset })
     }
-  })
 
-  return (
-    <mesh ref={meshRef} position={[0, 2.5, -35]}>
-      <circleGeometry args={[12, 64]} />
-      <shaderMaterial
-        args={[sunShader]}
-        transparent
-        depthWrite={false}
-      />
-    </mesh>
-  )
-}
+    // Set up palm silhouettes
+    createPalmTree([-9, -2.5, -12], 1.2, 0)
+    createPalmTree([-6, -2.5, -18], 0.9, 1.5)
+    createPalmTree([8, -2.5, -14], 1.1, 3)
+    createPalmTree([11, -2.5, -20], 0.8, 4.5)
+    createPalmTree([5, -2.5, -25], 0.7, 2)
 
-// ============================================
-// THREE.JS — PALM SILHOUETTES
-// ============================================
-function PalmSilhouette({ position = [0, 0, 0], scaleVal = 1, swayOffset = 0 }) {
-  const groupRef = useRef()
+    // 4. SPARKLES
+    const sparklesCount = 80
+    const sparklesGeo = new THREE.BufferGeometry()
+    const sparklesPositions = new Float32Array(sparklesCount * 3)
+    const sparklesData = []
 
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.4 + swayOffset) * 0.02
-    }
-  })
+    for (let i = 0; i < sparklesCount; i++) {
+      const x = (Math.random() - 0.5) * 20
+      const y = (Math.random() - 0.5) * 12
+      const z = (Math.random() - 0.5) * 20
+      sparklesPositions[i * 3] = x
+      sparklesPositions[i * 3 + 1] = y
+      sparklesPositions[i * 3 + 2] = z
 
-  const fronds = useMemo(() => {
-    const arr = []
-    const count = 7
-    for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2
-      arr.push({
-        pos: [Math.sin(angle) * 0.6, 3.5, Math.cos(angle) * 0.3],
-        rot: [Math.cos(angle) * 0.9, 0, Math.sin(angle) * 0.7 - 0.3],
+      sparklesData.push({
+        x, y, z,
+        speed: 0.1 + Math.random() * 0.3,
+        angle: Math.random() * Math.PI * 2
       })
     }
-    return arr
+    sparklesGeo.setAttribute('position', new THREE.BufferAttribute(sparklesPositions, 3))
+
+    // Canvas texture for round particles
+    const sparkleCanvas = document.createElement('canvas')
+    sparkleCanvas.width = 16
+    sparkleCanvas.height = 16
+    const sparkleCtx = sparkleCanvas.getContext('2d')
+    if (sparkleCtx) {
+      const grad = sparkleCtx.createRadialGradient(8, 8, 0, 8, 8, 8)
+      grad.addColorStop(0, 'rgba(255, 45, 149, 1)')
+      grad.addColorStop(0.3, 'rgba(255, 45, 149, 0.8)')
+      grad.addColorStop(1, 'rgba(255, 45, 149, 0)')
+      sparkleCtx.fillStyle = grad
+      sparkleCtx.fillRect(0, 0, 16, 16)
+    }
+    const sparkleTexture = new THREE.CanvasTexture(sparkleCanvas)
+
+    const sparklesMat = new THREE.PointsMaterial({
+      size: 0.8,
+      color: 0xff2d95,
+      transparent: true,
+      opacity: 0.5,
+      map: sparkleTexture,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+    const sparklesMesh = new THREE.Points(sparklesGeo, sparklesMat)
+    scene.add(sparklesMesh)
+
+    // 5. STARS
+    const starsCount = 2000
+    const starsGeo = new THREE.BufferGeometry()
+    const starsPositions = new Float32Array(starsCount * 3)
+
+    for (let i = 0; i < starsCount; i++) {
+      const radius = 50 + Math.random() * 20
+      const theta = Math.random() * Math.PI * 2
+      const phi = Math.acos((Math.random() - 0.5) * 2)
+      
+      starsPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta)
+      starsPositions[i * 3 + 1] = Math.abs(radius * Math.sin(phi) * Math.sin(theta))
+      starsPositions[i * 3 + 2] = radius * Math.cos(phi)
+    }
+    starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3))
+
+    const starCanvas = document.createElement('canvas')
+    starCanvas.width = 8
+    starCanvas.height = 8
+    const starCtx = starCanvas.getContext('2d')
+    if (starCtx) {
+      const grad = starCtx.createRadialGradient(4, 4, 0, 4, 4, 4)
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)')
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)')
+      starCtx.fillStyle = grad
+      starCtx.fillRect(0, 0, 8, 8)
+    }
+    const starTexture = new THREE.CanvasTexture(starCanvas)
+
+    const starsMat = new THREE.PointsMaterial({
+      size: 0.15,
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.8,
+      map: starTexture,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+    const starsMesh = new THREE.Points(starsGeo, starsMat)
+    scene.add(starsMesh)
+
+    // 6. POST-PROCESSING (Bloom)
+    const composer = new EffectComposer(renderer)
+    const renderPass = new RenderPass(scene, camera)
+    composer.addPass(renderPass)
+
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(width, height),
+      1.2, // strength
+      0.9, // radius
+      0.15 // threshold
+    )
+    composer.addPass(bloomPass)
+
+    // 7. MOUSE PARALLAX SETUP
+    let mouseX = 0
+    let mouseY = 0
+    let targetMouseX = 0
+    let targetMouseY = 0
+
+    const onMouseMove = (event) => {
+      targetMouseX = (event.clientX / window.innerWidth) * 2 - 1
+      targetMouseY = -(event.clientY / window.innerHeight) * 2 + 1
+    }
+    window.addEventListener('mousemove', onMouseMove)
+
+    // 8. RESIZE EVENT SETUP
+    const onResize = () => {
+      const w = window.innerWidth
+      const h = window.innerHeight
+      camera.aspect = w / h
+      camera.updateProjectionMatrix()
+      renderer.setSize(w, h)
+      composer.setSize(w, h)
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+    }
+    window.addEventListener('resize', onResize)
+
+    // 9. ANIMATION LOOP
+    const clock = new THREE.Clock()
+    let animationId
+
+    const tick = () => {
+      animationId = requestAnimationFrame(tick)
+
+      const elapsedTime = clock.getElapsedTime()
+
+      // Update shader uniforms
+      sunUniforms.uTime.value = elapsedTime
+      gridUniforms.uTime.value = elapsedTime
+
+      // Sway palm trees
+      palmTrees.forEach(({ group, swayOffset }) => {
+        group.rotation.z = Math.sin(elapsedTime * 0.4 + swayOffset) * 0.02
+      })
+
+      // Animate sparkles
+      const positions = sparklesGeo.attributes.position.array
+      for (let i = 0; i < sparklesCount; i++) {
+        const data = sparklesData[i]
+        data.y += Math.sin(elapsedTime * 0.5 + data.angle) * 0.01 * data.speed
+        data.x += Math.cos(elapsedTime * 0.3 + data.angle) * 0.01 * data.speed
+        
+        positions[i * 3] = data.x
+        positions[i * 3 + 1] = data.y
+      }
+      sparklesGeo.attributes.position.needsUpdate = true
+
+      // Slowly rotate stars
+      starsMesh.rotation.y = elapsedTime * 0.01
+      starsMesh.rotation.x = elapsedTime * 0.005
+
+      // Smooth mouse parallax
+      mouseX += (targetMouseX - mouseX) * 0.05
+      mouseY += (targetMouseY - mouseY) * 0.05
+
+      // Camera scroll reaction
+      const targetCamY = -1.5 + globalScrollProgress * 4
+      camera.position.y += (targetCamY - camera.position.y) * 0.03
+      
+      // Mouse offset
+      camera.position.x = mouseX * 0.8
+      camera.position.y += mouseY * 0.4
+
+      camera.lookAt(0, camera.position.y - 1 - mouseY * 0.2, -20)
+
+      composer.render()
+    }
+
+    tick()
+
+    // 10. CLEANUP
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('resize', onResize)
+      cancelAnimationFrame(animationId)
+
+      scene.traverse((object) => {
+        if (!object.isMesh && !object.isPoints) return
+
+        if (object.geometry) object.geometry.dispose()
+
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach((mat) => mat.dispose())
+          } else {
+            object.material.dispose()
+          }
+        }
+      })
+
+      sparkleTexture.dispose()
+      starTexture.dispose()
+      renderer.dispose()
+      composer.dispose()
+    }
   }, [])
 
   return (
-    <group ref={groupRef} position={position} scale={scaleVal}>
-      {/* Trunk */}
-      <mesh position={[0, 1.5, 0]}>
-        <cylinderGeometry args={[0.06, 0.12, 3.5, 5]} />
-        <meshBasicMaterial color="#030008" />
-      </mesh>
-      {/* Fronds */}
-      {fronds.map((f, i) => (
-        <mesh key={i} position={f.pos} rotation={f.rot}>
-          <planeGeometry args={[0.25, 2.2]} />
-          <meshBasicMaterial color="#030008" side={THREE.DoubleSide} />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
-// ============================================
-// THREE.JS — SCENE CAMERA (scroll-reactive)
-// ============================================
-function SceneCamera() {
-  const { camera } = useThree()
-
-  useFrame(() => {
-    // Slowly shift camera up as user scrolls
-    const targetY = -1.5 + globalScrollProgress * 4
-    camera.position.y += (targetY - camera.position.y) * 0.03
-    camera.lookAt(0, camera.position.y - 1, -20)
-  })
-
-  return null
-}
-
-// ============================================
-// THREE.JS — COMPLETE SCENE
-// ============================================
-function Scene3D() {
-  return (
-    <Canvas
-      camera={{ position: [0, -1.5, 6], fov: 70, near: 0.1, far: 100 }}
-      dpr={[1, 1.5]}
-      gl={{ antialias: true, alpha: false }}
-      style={{ background: '#05000f' }}
-    >
-      <color attach="background" args={['#05000f']} />
-
-      {/* Ambient mood lighting */}
-      <ambientLight intensity={0.15} />
-
-      {/* Scene elements */}
-      <NeonSun />
-      <SynthwaveGrid />
-
-      {/* Palm silhouettes */}
-      <PalmSilhouette position={[-9, -2.5, -12]} scaleVal={1.2} swayOffset={0} />
-      <PalmSilhouette position={[-6, -2.5, -18]} scaleVal={0.9} swayOffset={1.5} />
-      <PalmSilhouette position={[8, -2.5, -14]} scaleVal={1.1} swayOffset={3} />
-      <PalmSilhouette position={[11, -2.5, -20]} scaleVal={0.8} swayOffset={4.5} />
-      <PalmSilhouette position={[5, -2.5, -25]} scaleVal={0.7} swayOffset={2} />
-
-      {/* Sparkles */}
-      <Sparkles
-        count={80}
-        scale={[20, 12, 20]}
-        size={1.5}
-        speed={0.3}
-        color="#ff2d95"
-        opacity={0.4}
-      />
-      <Stars radius={60} depth={40} count={2000} factor={3} fade speed={0.5} />
-
-      {/* Scroll-reactive camera */}
-      <SceneCamera />
-
-      {/* Post-processing bloom for neon glow */}
-      <EffectComposer disableNormalPass>
-        <Bloom
-          intensity={1.2}
-          luminanceThreshold={0.15}
-          luminanceSmoothing={0.9}
-          mipmapBlur
-        />
-      </EffectComposer>
-    </Canvas>
+    <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
   )
 }
 
@@ -833,7 +972,7 @@ export default function App() {
 
       {/* Fixed Three.js background */}
       <div className="canvas-wrapper">
-        <Scene3D />
+        <VanillaScene3D />
       </div>
 
       {/* Hero sits outside the opaque container so 3D canvas shows through */}
