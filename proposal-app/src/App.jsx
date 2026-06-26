@@ -768,34 +768,49 @@ export default function App() {
   useEffect(() => {
     if (!loaded) return
 
-    // Wait a beat for DOM to be ready
-    const timer = setTimeout(() => {
-      // Reveal animations for all .reveal elements
-      const reveals = document.querySelectorAll('.reveal')
-      reveals.forEach((el) => {
-        gsap.fromTo(
-          el,
-          { opacity: 0, y: 50 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: el,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      })
+    // Wait for the browser's next real paint (lets the WebGL canvas finish
+    // its first frame) instead of guessing with a flat setTimeout. Forcing
+    // ScrollTrigger.refresh() — a synchronous layout reflow — while the
+    // canvas/post-processing pipeline is still warming up its first frame
+    // was what caused the background to flash in then disappear on the
+    // first scroll.
+    let rafId
+    let triggers = []
 
-      ScrollTrigger.refresh()
-    }, 200)
+    rafId = requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
+        const reveals = document.querySelectorAll('.reveal')
+        reveals.forEach((el) => {
+          const tween = gsap.fromTo(
+            el,
+            { opacity: 0, y: 50 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 1,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: el,
+                start: 'top 85%',
+                toggleActions: 'play none none none',
+              },
+            }
+          )
+          if (tween.scrollTrigger) triggers.push(tween.scrollTrigger)
+        })
+
+        // No manual ScrollTrigger.refresh() here — ScrollTrigger already
+        // recalculates on its own 'load' and resize handling. Calling
+        // refresh() manually right as the canvas is still rendering its
+        // first frame forced a synchronous reflow that collided with the
+        // WebGL paint, producing the flicker.
+      })
+    })
 
     return () => {
-      clearTimeout(timer)
-      ScrollTrigger.getAll().forEach((t) => t.kill())
+      cancelAnimationFrame(rafId)
+      triggers.forEach((t) => t.kill())
+      triggers = []
     }
   }, [loaded])
 
